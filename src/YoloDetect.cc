@@ -9,13 +9,22 @@ namespace ORB_SLAM3
 	static const int INPUT_H = 640;
 	YoloDetect::YoloDetect()
 	{
-		mObject.area = cv::Rect(10, 20, 10, 10);
-		mObject.label = 0;
+
+
 	}
 	//Just for test
+	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height)
+	{
+		Object newObject;
+		newObject.area = cv::Rect(area_x, area_y, area_width, area_height);
+		newObject.label = 0;
+		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
+		mObjects.push_back(newObject);			
+	}
 	void YoloDetect::Detect()
 	{
-		mObject.area = cv::Rect(10, 20, 10, 10);
+		if(mObjects.size()<1)
+			AddNewObject(100,100,10,10);
 	}
 	void YoloDetect::Run()
 	{
@@ -23,7 +32,7 @@ namespace ORB_SLAM3
 		{
 			Detect();
 			cout <<"YoloDetect is here!"<<endl;
-			usleep(1000);
+			usleep(100000);
 		}
 	}
 } //namespace ORB_SLAM3

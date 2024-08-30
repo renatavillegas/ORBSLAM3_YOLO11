@@ -11,7 +11,7 @@ public:
 		cv::Rect area;
 		int label; 
 		std::vector<cv::KeyPoint> keyPoints;
-		std::vector<MapPoint> mapPoints;
+		std::vector<MapPoint*> mapPoints;
 	} Object;	
 	//Constructor 
 	YoloDetect();
@@ -19,8 +19,9 @@ public:
 	void Detect();
 	//thread function 
 	void Run();
+	void AddNewObject(int area_x, int area_y, int area_width, int area_height);
 private:
-	Object mObject;
+	std::vector<Object> mObjects;
 };
 }// namespace ORB_SLAM3
 #endif // DETECTOR_H
