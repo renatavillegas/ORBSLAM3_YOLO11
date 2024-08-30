@@ -39,7 +39,7 @@
 #include "Viewer.h"
 #include "ImuTypes.h"
 #include "Settings.h"
-
+#include "YoloDetect.h"
 
 namespace ORB_SLAM3
 {
@@ -230,11 +230,15 @@ private:
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
 
+    //YoloDetector. 
+    YoloDetect* mpYoloDetector;
+    
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
     std::thread* mptLocalMapping;
     std::thread* mptLoopClosing;
     std::thread* mptViewer;
+    std::thread* mpYoloDetecting;
 
     // Reset flag
     std::mutex mMutexReset;

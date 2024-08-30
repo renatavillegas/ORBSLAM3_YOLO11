@@ -235,7 +235,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpLoopCloser->mpViewer = mpViewer;
         mpViewer->both = mpFrameDrawer->both;
     }
-
+    //Initialize the Yolo thread
+    mpYoloDetector = new YoloDetect();
+    mpYoloDetecting = new thread(&ORB_SLAM3::YoloDetect::Run, mpYoloDetector);
     // Fix verbosity
     Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 
