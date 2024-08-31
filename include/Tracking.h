@@ -36,6 +36,7 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "YoloDetect.h"
 
 #include "GeometricCamera.h"
 
@@ -96,11 +97,11 @@ public:
 
     void CreateMapInAtlas();
     //std::mutex mMutexTracks;
-
     //--
     void NewDataset();
     int GetNumberDataset();
     int GetMatchesInliers();
+    void SearchLocalPointsRegion();
 
     //DEBUG
     void SaveSubTrajectory(string strNameFile_frames, string strNameFile_kf, string strFolder="");
@@ -282,7 +283,7 @@ protected:
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
     bool bStepByStep;
-
+    YoloDetect *mpYoloDetect;
     //Atlas
     Atlas* mpAtlas;
 

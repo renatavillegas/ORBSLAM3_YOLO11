@@ -20,7 +20,6 @@ public:
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height);
-private:
 	std::vector<Object> mObjects;
 };
 }// namespace ORB_SLAM3

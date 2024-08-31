@@ -1449,8 +1449,6 @@ bool Tracking::GetStepByStep()
     return bStepByStep;
 }
 
-
-
 Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, string filename)
 {
     //cout << "GrabImageStereo" << endl;
@@ -1503,7 +1501,10 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
-
+    mpYoloDetect = new YoloDetect();
+    mpYoloDetect->Detect();
+    std::vector<YoloDetect::Object>& detectedObjects = mpYoloDetect->mObjects;
+    cout<<"Object detected size="<<detectedObjects.size()<<endl;
 #ifdef REGISTER_TIMES
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
     vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);
@@ -1511,6 +1512,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
 
     //cout << "Tracking start" << endl;
     Track();
+    SearchLocalPointsRegion();
     //cout << "Tracking end" << endl;
 
     return mCurrentFrame.GetPose();
@@ -3338,6 +3340,98 @@ void Tracking::CreateNewKeyFrame()
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
+}
+
+void Tracking::SearchLocalPointsRegion()
+{
+    // Clear previously matched map points
+    for (vector<MapPoint*>::iterator vit = mCurrentFrame.mvpMapPoints.begin(), vend = mCurrentFrame.mvpMapPoints.end(); vit != vend; vit++)
+    {
+        MapPoint* pMP = *vit;
+        if (pMP)
+        {
+            if (pMP->isBad())
+            {
+                *vit = static_cast<MapPoint*>(NULL);
+            }
+            else
+            {
+                pMP->IncreaseVisible();
+                pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+                pMP->mbTrackInView = false;
+                pMP->mbTrackInViewR = false;
+            }
+        }
+    }
+
+    int nToMatch = 0;
+
+    // Define the region of interest (example region from YoloDetect)
+    cv::Rect regionOfInterest(100,100, 100,100);  // Define this based on your specific region
+
+    // Vector to store map points inside the region of interest
+    std::vector<MapPoint*> mapPointsInROI;
+
+    // Project points in frame and check their visibility
+    for (vector<MapPoint*>::iterator vit = mvpLocalMapPoints.begin(), vend = mvpLocalMapPoints.end(); vit != vend; vit++)
+    {
+        MapPoint* pMP = *vit;
+
+        if (pMP->mnLastFrameSeen == mCurrentFrame.mnId)
+            continue;
+        if (pMP->isBad())
+            continue;
+
+        // Project (this fills MapPoint variables for matching)
+        if (mCurrentFrame.isInFrustum(pMP, 0.5))
+        {
+            pMP->IncreaseVisible();
+            nToMatch++;
+        }
+
+        if (pMP->mbTrackInView)
+        {
+            cv::Point2f projectedPoint(pMP->mTrackProjX, pMP->mTrackProjY);
+            mCurrentFrame.mmProjectPoints[pMP->mnId] = projectedPoint;
+
+            // Check if the projected point is inside the region of interest
+            if (regionOfInterest.contains(projectedPoint))
+            {
+                mapPointsInROI.push_back(pMP);  // Add to vector if inside ROI
+            }
+        }
+    }
+
+    // Output or use mapPointsInROI as needed
+    std::cout << "Number of MapPoints in ROI: " << mapPointsInROI.size() << std::endl;
+
+    if (nToMatch > 0)
+    {
+        ORBmatcher matcher(0.8);
+        int th = 1;
+        if (mSensor == System::RGBD || mSensor == System::IMU_RGBD)
+            th = 3;
+        if (mpAtlas->isImuInitialized())
+        {
+            if (mpAtlas->GetCurrentMap()->GetIniertialBA2())
+                th = 2;
+            else
+                th = 6;
+        }
+        else if (!mpAtlas->isImuInitialized() && (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
+        {
+            th = 10;
+        }
+
+        // If the camera has been relocalised recently, perform a coarser search
+        if (mCurrentFrame.mnId < mnLastRelocFrameId + 2)
+            th = 5;
+
+        if (mState == LOST || mState == RECENTLY_LOST) // Lost for less than 1 second
+            th = 15; // 15
+
+        int matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
+    }
 }
 
 void Tracking::SearchLocalPoints()

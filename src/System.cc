@@ -212,7 +212,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
     mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
     mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-
+    //Initialize the Yolo thread
+    mpYoloDetector = new YoloDetect();
+    mpYoloDetecting = new thread(&ORB_SLAM3::YoloDetect::Run, mpYoloDetector);
+    
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpTracker->SetLoopClosing(mpLoopCloser);
@@ -235,9 +238,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpLoopCloser->mpViewer = mpViewer;
         mpViewer->both = mpFrameDrawer->both;
     }
-    //Initialize the Yolo thread
-    mpYoloDetector = new YoloDetect();
-    mpYoloDetecting = new thread(&ORB_SLAM3::YoloDetect::Run, mpYoloDetector);
     // Fix verbosity
     Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 
