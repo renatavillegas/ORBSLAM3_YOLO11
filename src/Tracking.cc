@@ -1512,7 +1512,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
 
     //cout << "Tracking start" << endl;
     Track();
-    SearchLocalPointsRegion();
+    //SearchLocalPointsRegion();
     //cout << "Tracking end" << endl;
 
     return mCurrentFrame.GetPose();
@@ -2956,7 +2956,7 @@ bool Tracking::TrackLocalMap()
     mTrackedFr++;
 
     UpdateLocalMap();
-    SearchLocalPoints();
+    SearchLocalPointsRegion();
 
     // TOO check outliers before PO
     int aux1 = 0, aux2=0;
@@ -3366,8 +3366,8 @@ void Tracking::SearchLocalPointsRegion()
 
     int nToMatch = 0;
 
-    // Define the region of interest (example region from YoloDetect)
-    cv::Rect regionOfInterest(100,100, 100,100);  // Define this based on your specific region
+    std::vector<YoloDetect::Object>& detectedObjects = mpYoloDetect->mObjects;
+    cv::Rect regionOfInterest=detectedObjects[0].area;  // Define this based on your specific region
 
     // Vector to store map points inside the region of interest
     std::vector<MapPoint*> mapPointsInROI;
@@ -3401,7 +3401,8 @@ void Tracking::SearchLocalPointsRegion()
             }
         }
     }
-
+    //copy the mapPointsInROI to the YoloDetect object 
+    mpYoloDetect->mObjects[0].mapPoints = mapPointsInROI;
     // Output or use mapPointsInROI as needed
     std::cout << "Number of MapPoints in ROI: " << mapPointsInROI.size() << std::endl;
 

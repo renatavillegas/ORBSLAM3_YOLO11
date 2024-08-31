@@ -24,7 +24,7 @@ namespace ORB_SLAM3
 	void YoloDetect::Detect()
 	{
 		if(mObjects.size()<1)
-			AddNewObject(100,100,10,10);
+			AddNewObject(10,10,100,100);
 	}
 	void YoloDetect::Run()
 	{
