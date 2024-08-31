@@ -49,7 +49,9 @@ public:
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw);
-
+    void DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points);
+    std::vector<Eigen::Vector3f> GetClosestPointsToMapCenter();
+    void DrawRegion();
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);

@@ -21,7 +21,9 @@
 #include "KeyFrame.h"
 #include <pangolin/pangolin.h>
 #include <mutex>
-
+#include <Eigen/Core>
+#include <string>
+#include <GL/glut.h> 
 namespace ORB_SLAM3
 {
 
@@ -132,6 +134,133 @@ bool MapDrawer::ParseViewerParamFile(cv::FileStorage &fSettings)
     return !b_miss_params;
 }
 
+void RenderText(const std::string& text, float x, float y, float scale = 1.0f)
+{
+    // Defina a cor do texto (vermelho, por exemplo)
+    glColor3f(0.0f, 0.0f, 0.0f);
+
+    // Posiciona o texto na tela
+    glRasterPos2f(x, y);
+
+    // Renderiza cada caractere
+    for (const char &c : text) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+}
+bool glut_initialized = false;
+void InitializeGLUT() {
+    int argc = 0;
+    if (!glut_initialized) {
+        glutInit(&argc, NULL);
+        glut_initialized = true;
+    }
+}
+Eigen::Vector3f CalculateCentroid(const std::vector<Eigen::Vector3f>& points) {
+    Eigen::Vector3f centroid(0.0f, 0.0f, 0.0f);
+    for (int i = 0; i < points.size(); i++) {
+        centroid += points[i];
+    }
+    centroid /= points.size();
+    cout << "centroid=" << centroid<<endl;
+    return centroid;
+}
+
+float FindMaxDistance(const Eigen::Vector3f& centroid, const std::vector<Eigen::Vector3f>& points) {
+    float max_distance = 0.0f;
+    cout << "points.size()" << points.size()<<endl;
+    for (int i = 0; i < points.size(); i++) {
+        float distance = (points[i] - centroid).norm(); 
+        if (distance > max_distance) {
+            max_distance = distance;
+        }
+    }
+    cout << "max dist=" << max_distance<<endl;
+    return max_distance;
+}
+
+std::vector<Eigen::Vector3f> MapDrawer::GetClosestPointsToMapCenter() {
+    // Get all map points from the current active map
+    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    if (!pActiveMap)
+        return {};
+
+    const vector<MapPoint*>& vpMPs = pActiveMap->GetAllMapPoints();
+    if (vpMPs.empty())
+        return {};
+
+    // Vector to store valid points
+    std::vector<Eigen::Vector3f> validPoints;
+
+    // Collect all valid points
+    for (const auto& mp : vpMPs) {
+        if (mp && !mp->isBad()) {
+            Eigen::Vector3f pos = mp->GetWorldPos();
+            if (pos.array().isFinite().all()) { // Ensure the point is finite
+                validPoints.push_back(pos);
+            }
+        }
+    }
+
+    // Check if there are enough valid points
+    if (validPoints.size() < 5) {
+        std::cerr << "Not enough valid points to calculate." << std::endl;
+        return {};
+    }
+
+    // Calculate the centroid of all valid points (this is the map center)
+    Eigen::Vector3f mapCentroid = CalculateCentroid(validPoints);
+
+    // Calculate the distances from each point to the map center
+    std::vector<std::pair<float, Eigen::Vector3f>> distances;
+    for (const auto& pos : validPoints) {
+        float distance = (pos - mapCentroid).norm();
+        distances.push_back(std::make_pair(distance, pos));
+    }
+
+    // Sort the points by their distance to the map center
+    std::sort(distances.begin(), distances.end(),
+        [](const std::pair<float, Eigen::Vector3f>& a, const std::pair<float, Eigen::Vector3f>& b) {
+            return a.first < b.first;
+        });
+
+    // Select the 5 closest points to the map center
+    std::vector<Eigen::Vector3f> closestPoints;
+    for (int i = 0; i < 5; ++i) {
+        closestPoints.push_back(distances[i].second);
+    }
+
+    return closestPoints;
+}
+
+void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points) {
+    if (points.size() < 5) {
+        std::cerr << "Not enough points to draw the cube." << std::endl;
+        return;
+    }
+
+    // Compute the centroid of the given points
+    Eigen::Vector3f centroid = CalculateCentroid(points);
+    float max_distance = FindMaxDistance(centroid, points);
+
+    // Render the cube
+    glPushMatrix();
+    glTranslatef(centroid(0), centroid(1), centroid(2));
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    pangolin::glDrawColouredCube(max_distance);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    InitializeGLUT();
+    RenderText("Object detected!", centroid(0) + 0.1, centroid(1));
+    glPopMatrix();
+    std::cout << "Draw" << std::endl;
+}
+
+void MapDrawer::DrawRegion() {
+    // Get the 5 points closest to the map center
+    std::vector<Eigen::Vector3f> closestPoints = GetClosestPointsToMapCenter();
+    
+    // Draw the cube around those points
+    DrawCubeAroundPoints(closestPoints);
+}
 void MapDrawer::DrawMapPoints()
 {
     Map* pActiveMap = mpAtlas->GetCurrentMap();
@@ -149,29 +278,25 @@ void MapDrawer::DrawMapPoints()
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
     glColor3f(0.0,0.0,0.0);
-
+    Eigen::Matrix<float,3,1> pos;
     for(size_t i=0, iend=vpMPs.size(); i<iend;i++)
     {
         if(vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
             continue;
-        Eigen::Matrix<float,3,1> pos = vpMPs[i]->GetWorldPos();
+        pos = vpMPs[i]->GetWorldPos();
         glVertex3f(pos(0),pos(1),pos(2));
     }
     glEnd();
-
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
     glColor3f(1.0,0.0,0.0);
-
     for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
     {
         if((*sit)->isBad())
             continue;
         Eigen::Matrix<float,3,1> pos = (*sit)->GetWorldPos();
         glVertex3f(pos(0),pos(1),pos(2));
-
     }
-
     glEnd();
 }
 
@@ -351,8 +476,6 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
                 unsigned int index_color = pKF->mnOriginMapId;
 
                 glPushMatrix();
-
-                glMultMatrixf((GLfloat*)Twc.data());
 
                 if(!vpKFs[i]->GetParent()) // It is the first KF in the map
                 {
