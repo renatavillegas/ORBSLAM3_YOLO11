@@ -256,11 +256,30 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points)
 
 void MapDrawer::DrawRegion() {
     // Get the 5 points closest to the map center
-    std::vector<Eigen::Vector3f> closestPoints = GetClosestPointsToMapCenter();
-    
+    std::vector<Eigen::Vector3f> closestPoints = GetClosestPointsToMapCenter();    
     // Draw the cube around those points
     DrawCubeAroundPoints(closestPoints);
 }
+
+void MapDrawer::DrawObjects(vector<MapPoint*> objMps) {
+   
+   Eigen::Matrix<float,3,1> pos;
+    // Vector to store valid points
+    std::vector<Eigen::Vector3f> validPoints;
+
+    // Collect all valid points
+    for (const auto& mp : objMps) {
+        if (mp && !mp->isBad()) {
+            Eigen::Vector3f pos = mp->GetWorldPos();
+            if (pos.array().isFinite().all()) { // Ensure the point is finite
+                validPoints.push_back(pos);
+            }
+        }
+    }
+    
+    DrawCubeAroundPoints(validPoints);
+}
+
 void MapDrawer::DrawMapPoints()
 {
     Map* pActiveMap = mpAtlas->GetCurrentMap();
