@@ -81,6 +81,8 @@ public:
     void SetViewer(Viewer* pViewer);
     void SetStepByStep(bool bSet);
     bool GetStepByStep();
+    
+    std::vector<YoloDetect::Object> GetYoloDetectObject();
 
     // Load new settings
     // The focal lenght should be similar or scale prediction will fail when projecting points
@@ -283,6 +285,7 @@ protected:
     FrameDrawer* mpFrameDrawer;
     MapDrawer* mpMapDrawer;
     bool bStepByStep;
+    //Yolo detetion
     YoloDetect *mpYoloDetect;
     //Atlas
     Atlas* mpAtlas;

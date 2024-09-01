@@ -48,6 +48,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
+    mpYoloDetect = new YoloDetect();
+
     // Load camera parameters from settings file
     if(settings){
         newParameterLoader(settings);
@@ -1449,6 +1451,11 @@ bool Tracking::GetStepByStep()
     return bStepByStep;
 }
 
+std::vector<YoloDetect::Object> Tracking::GetYoloDetectObject()
+{
+    return mpYoloDetect->mObjects;
+}
+
 Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, string filename)
 {
     //cout << "GrabImageStereo" << endl;
@@ -1501,7 +1508,6 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
-    mpYoloDetect = new YoloDetect();
     mpYoloDetect->Detect();
     std::vector<YoloDetect::Object>& detectedObjects = mpYoloDetect->mObjects;
     cout<<"Object detected size="<<detectedObjects.size()<<endl;
@@ -1546,11 +1552,6 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
         mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     else if(mSensor == System::IMU_RGBD)
         mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
-
-
-
-
-
 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;

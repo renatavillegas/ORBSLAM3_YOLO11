@@ -25,6 +25,7 @@
 #include"KeyFrame.h"
 #include "Settings.h"
 #include<pangolin/pangolin.h>
+#include "YoloDetect.h";
 
 #include<mutex>
 
@@ -38,7 +39,7 @@ class MapDrawer
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings);
-
+    //MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings, YoloDetect* pYoloDetect);
     void newParameterLoader(Settings* settings);
 
     Atlas* mpAtlas;
@@ -73,6 +74,7 @@ private:
                                 {0.6f, 0.0f, 1.0f},
                                 {1.0f, 1.0f, 0.0f},
                                 {0.0f, 1.0f, 1.0f}};
+    YoloDetect* mpYoloDetect;
 
 };
 

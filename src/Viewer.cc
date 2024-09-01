@@ -219,6 +219,8 @@ void Viewer::Run()
     float trackedImageScale = mpTracker->GetImageScale();
 
     cout << "Starting the Viewer" << endl;
+    std::vector<YoloDetect::Object> objects = mpTracker->GetYoloDetectObject();
+    cout << "Tracking object test: "<< objects[0].area<<endl;
     while(1)
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
