@@ -103,7 +103,7 @@ public:
     void NewDataset();
     int GetNumberDataset();
     int GetMatchesInliers();
-    void SearchLocalPointsRegion();
+    void SearchLocalPointsRegion(cv::Rect objectArea, int objectIndex);
 
     //DEBUG
     void SaveSubTrajectory(string strNameFile_frames, string strNameFile_kf, string strFolder="");
@@ -287,6 +287,7 @@ protected:
     bool bStepByStep;
     //Yolo detetion
     YoloDetect *mpYoloDetect;
+    int mDetectedObjectSize;
     //Atlas
     Atlas* mpAtlas;
 

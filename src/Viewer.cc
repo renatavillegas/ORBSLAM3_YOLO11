@@ -217,7 +217,6 @@ void Viewer::Run()
     }
 
     float trackedImageScale = mpTracker->GetImageScale();
-
     cout << "Starting the Viewer" << endl;
     while(1)
     {
@@ -314,8 +313,16 @@ void Viewer::Run()
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph, menuShowInertialGraph, menuShowOptLba);
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
+
         std::vector<YoloDetect::Object> objects = mpTracker->GetYoloDetectObject();
-        mpMapDrawer->DrawObjects(objects[0].mapPoints);
+        if (objects.empty())
+            return;
+
+        // Iterate over each object and draw it
+        for (const auto& object : objects)
+        {
+            mpMapDrawer->DrawObject(object);
+        }
 
         pangolin::FinishFrame();
 

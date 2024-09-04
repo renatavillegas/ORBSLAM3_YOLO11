@@ -20,6 +20,12 @@ public:
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height);
+	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
+	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
+	std::vector<Object> GetObjects();
+	bool newObjct;
+private:
+	std::mutex mMutex;
 	std::vector<Object> mObjects;
 };
 }// namespace ORB_SLAM3

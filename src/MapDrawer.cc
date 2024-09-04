@@ -161,20 +161,20 @@ Eigen::Vector3f CalculateCentroid(const std::vector<Eigen::Vector3f>& points) {
         centroid += points[i];
     }
     centroid /= points.size();
-    cout << "centroid=" << centroid<<endl;
+    //cout << "centroid=" << centroid<<endl;
     return centroid;
 }
 
 float FindMaxDistance(const Eigen::Vector3f& centroid, const std::vector<Eigen::Vector3f>& points) {
     float max_distance = 0.0f;
-    cout << "points.size()" << points.size()<<endl;
+    //cout << "points.size()" << points.size()<<endl;
     for (int i = 0; i < points.size(); i++) {
         float distance = (points[i] - centroid).norm(); 
         if (distance > max_distance) {
             max_distance = distance;
         }
     }
-    cout << "max dist=" << max_distance<<endl;
+    //cout << "max dist=" << max_distance<<endl;
     return max_distance;
 }
 
@@ -233,7 +233,7 @@ std::vector<Eigen::Vector3f> MapDrawer::GetClosestPointsToMapCenter() {
 }
 
 void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points) {
-    if (points.size() < 5) {
+    if (points.size() < 2) {
         std::cerr << "Not enough points to draw the cube." << std::endl;
         return;
     }
@@ -251,7 +251,7 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points)
     InitializeGLUT();
     RenderText("Object detected!", centroid(0) + 0.1, centroid(1));
     glPopMatrix();
-    std::cout << "Draw" << std::endl;
+    //std::cout << "Draw" << std::endl;
 }
 
 void MapDrawer::DrawRegion() {
@@ -261,24 +261,30 @@ void MapDrawer::DrawRegion() {
     DrawCubeAroundPoints(closestPoints);
 }
 
-void MapDrawer::DrawObjects(vector<MapPoint*> objMps) {
-   
-   Eigen::Matrix<float,3,1> pos;
+void MapDrawer::DrawObject(const YoloDetect::Object& object) {
     // Vector to store valid points
     std::vector<Eigen::Vector3f> validPoints;
 
     // Collect all valid points
-    for (const auto& mp : objMps) {
-        if (mp && !mp->isBad()) {
+    for (const auto& mp : object.mapPoints)
+    {
+        // Ensure the map point is valid and not bad
+        if (mp && !mp->isBad())
+        {
             Eigen::Vector3f pos = mp->GetWorldPos();
-            if (pos.array().isFinite().all()) { // Ensure the point is finite
+            
+            // Ensure the position is finite
+            if (pos.array().isFinite().all())
+            {
                 validPoints.push_back(pos);
             }
         }
     }
     
+    // Draw a cube around the valid points
     DrawCubeAroundPoints(validPoints);
 }
+
 
 void MapDrawer::DrawMapPoints()
 {

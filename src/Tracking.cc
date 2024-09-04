@@ -49,6 +49,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
     mpYoloDetect = new YoloDetect();
+    mDetectedObjectSize =0;
 
     // Load camera parameters from settings file
     if(settings){
@@ -1453,7 +1454,7 @@ bool Tracking::GetStepByStep()
 
 std::vector<YoloDetect::Object> Tracking::GetYoloDetectObject()
 {
-    return mpYoloDetect->mObjects;
+    return mpYoloDetect->GetObjects();
 }
 
 Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, string filename)
@@ -1509,8 +1510,6 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
     mpYoloDetect->Detect();
-    std::vector<YoloDetect::Object>& detectedObjects = mpYoloDetect->mObjects;
-    cout<<"Object detected size="<<detectedObjects.size()<<endl;
 #ifdef REGISTER_TIMES
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
     vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);
@@ -2957,8 +2956,14 @@ bool Tracking::TrackLocalMap()
     mTrackedFr++;
 
     UpdateLocalMap();
-    SearchLocalPointsRegion();
-
+    if(mDetectedObjectSize<mpYoloDetect->GetObjects().size()){
+        //map only new objects
+        for(int i= mDetectedObjectSize; i<mpYoloDetect->GetObjects().size(); i++){
+            SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
+        }
+        mDetectedObjectSize = mpYoloDetect->GetObjects().size();
+    }
+    SearchLocalPoints();
     // TOO check outliers before PO
     int aux1 = 0, aux2=0;
     for(int i=0; i<mCurrentFrame.N; i++)
@@ -3343,9 +3348,9 @@ void Tracking::CreateNewKeyFrame()
     mpLastKeyFrame = pKF;
 }
 
-void Tracking::SearchLocalPointsRegion()
+void Tracking::SearchLocalPointsRegion(cv::Rect objectArea, int objectIndex)
 {
-    // Clear previously matched map points
+    // Do not search map points already matched
     for (vector<MapPoint*>::iterator vit = mCurrentFrame.mvpMapPoints.begin(), vend = mCurrentFrame.mvpMapPoints.end(); vit != vend; vit++)
     {
         MapPoint* pMP = *vit;
@@ -3367,13 +3372,7 @@ void Tracking::SearchLocalPointsRegion()
 
     int nToMatch = 0;
 
-    std::vector<YoloDetect::Object>& detectedObjects = mpYoloDetect->mObjects;
-    cv::Rect regionOfInterest=detectedObjects[0].area;  // Define this based on your specific region
-
-    // Vector to store map points inside the region of interest
-    std::vector<MapPoint*> mapPointsInROI;
-
-    // Project points in frame and check their visibility
+    // Project points in frame and check its visibility
     for (vector<MapPoint*>::iterator vit = mvpLocalMapPoints.begin(), vend = mvpLocalMapPoints.end(); vit != vend; vit++)
     {
         MapPoint* pMP = *vit;
@@ -3382,7 +3381,7 @@ void Tracking::SearchLocalPointsRegion()
             continue;
         if (pMP->isBad())
             continue;
-
+        
         // Project (this fills MapPoint variables for matching)
         if (mCurrentFrame.isInFrustum(pMP, 0.5))
         {
@@ -3394,45 +3393,17 @@ void Tracking::SearchLocalPointsRegion()
         {
             cv::Point2f projectedPoint(pMP->mTrackProjX, pMP->mTrackProjY);
             mCurrentFrame.mmProjectPoints[pMP->mnId] = projectedPoint;
-
+            // Iterate over objects from YoloDetect and check if the projected point is inside the region of interest
             // Check if the projected point is inside the region of interest
-            if (regionOfInterest.contains(projectedPoint))
+            if (objectArea.contains(projectedPoint))
             {
-                mapPointsInROI.push_back(pMP);  // Add to vector if inside ROI
+                // Use thread-safe method to set map points for the detected object
+                std::vector<MapPoint*> updatedMapPoints = mpYoloDetect->GetObjects()[objectIndex].mapPoints;
+                updatedMapPoints.push_back(pMP);
+                mpYoloDetect->SetMapPoints(objectIndex, updatedMapPoints);
             }
+            
         }
-    }
-    //copy the mapPointsInROI to the YoloDetect object 
-    mpYoloDetect->mObjects[0].mapPoints = mapPointsInROI;
-    // Output or use mapPointsInROI as needed
-    std::cout << "Number of MapPoints in ROI: " << mapPointsInROI.size() << std::endl;
-
-    if (nToMatch > 0)
-    {
-        ORBmatcher matcher(0.8);
-        int th = 1;
-        if (mSensor == System::RGBD || mSensor == System::IMU_RGBD)
-            th = 3;
-        if (mpAtlas->isImuInitialized())
-        {
-            if (mpAtlas->GetCurrentMap()->GetIniertialBA2())
-                th = 2;
-            else
-                th = 6;
-        }
-        else if (!mpAtlas->isImuInitialized() && (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
-        {
-            th = 10;
-        }
-
-        // If the camera has been relocalised recently, perform a coarser search
-        if (mCurrentFrame.mnId < mnLastRelocFrameId + 2)
-            th = 5;
-
-        if (mState == LOST || mState == RECENTLY_LOST) // Lost for less than 1 second
-            th = 15; // 15
-
-        int matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
     }
 }
 
