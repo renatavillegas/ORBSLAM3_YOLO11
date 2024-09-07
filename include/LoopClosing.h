@@ -222,8 +222,8 @@ protected:
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
 
-
-    bool mnFullBAIdx;
+    //change to compile C++17
+    int mnFullBAIdx;
 
 
 

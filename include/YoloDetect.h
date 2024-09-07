@@ -1,5 +1,11 @@
 #ifndef YOLO_DETECT_H
 #define YOLO_DETECT_H
+#include <opencv2/opencv.hpp>
+#include <torch/script.h>
+#include <algorithm>
+#include <iostream>
+#include <utility>
+#include <time.h>
 
 namespace ORB_SLAM3
 {
