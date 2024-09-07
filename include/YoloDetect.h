@@ -23,6 +23,9 @@ public:
 	YoloDetect();
 	//yolo detection function
 	void Detect();
+	// yolo detection variables
+	torch::jit::script::Module mModule;
+	std::vector<std::string> mClassnames;
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height);

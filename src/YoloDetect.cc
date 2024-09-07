@@ -9,8 +9,17 @@ namespace ORB_SLAM3
 	static const int INPUT_H = 640;
 	YoloDetect::YoloDetect()
 	{
+		cout <<"Hello"<<endl;
 
-
+		//load model 
+		mModule = torch::jit::load("yolov10n.torchscript");
+		//load classes
+		std::ifstream f("coco.names");
+    	std::string name = "";
+   	 	while (std::getline(f, name))
+     	{
+        	mClassnames.push_back(name);
+    	}
 	}
 	//Just for test
 	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height)
