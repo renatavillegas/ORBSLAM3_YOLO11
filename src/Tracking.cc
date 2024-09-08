@@ -1465,6 +1465,12 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     cv::Mat imGrayRight = imRectRight;
     mImRight = imRectRight;
 
+     // Yolo
+    cv::Mat InputImage;
+    InputImage = imRectLeft.clone();
+    mpYoloDetect->GetImage(InputImage);
+    mpYoloDetect->Detect();
+
     if(mImGray.channels()==3)
     {
         //cout << "Image with 3 channels" << endl;
@@ -1509,7 +1515,8 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
 
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
-    mpYoloDetect->Detect();
+;
+
 #ifdef REGISTER_TIMES
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
     vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);

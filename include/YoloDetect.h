@@ -26,6 +26,10 @@ public:
 	// yolo detection variables
 	torch::jit::script::Module mModule;
 	std::vector<std::string> mClassnames;
+	cv::Mat mImage;
+	//Yolo functions 
+	void GetImage(cv::Mat &image);
+	vector<torch::Tensor> non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height);
