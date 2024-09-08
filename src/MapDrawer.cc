@@ -233,8 +233,8 @@ std::vector<Eigen::Vector3f> MapDrawer::GetClosestPointsToMapCenter() {
 }
 
 void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points) {
-    if (points.size() < 2) {
-        std::cerr << "Not enough points to draw the cube." << std::endl;
+    if (points.size() < 5) {
+//        std::cerr << "Not enough points to draw the cube." << std::endl;
         return;
     }
 

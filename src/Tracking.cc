@@ -2969,6 +2969,7 @@ bool Tracking::TrackLocalMap()
             SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
         }
         mDetectedObjectSize = mpYoloDetect->GetObjects().size();
+        cout << "mDetectedObjectSize=" << mDetectedObjectSize<<endl;
     }
     SearchLocalPoints();
     // TOO check outliers before PO
