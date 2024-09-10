@@ -232,7 +232,7 @@ std::vector<Eigen::Vector3f> MapDrawer::GetClosestPointsToMapCenter() {
     return closestPoints;
 }
 
-void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points) {
+void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID) {
     if (points.size() < 5) {
 //        std::cerr << "Not enough points to draw the cube." << std::endl;
         return;
@@ -249,7 +249,8 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points)
     pangolin::glDrawColouredCube(max_distance);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     InitializeGLUT();
-    RenderText("Object detected!", centroid(0) + 0.1, centroid(1));
+    std::string text = "ClassID: " + classID; 
+    RenderText(text, centroid(0) + 0.1, centroid(1));
     glPopMatrix();
     //std::cout << "Draw" << std::endl;
 }
@@ -258,7 +259,7 @@ void MapDrawer::DrawRegion() {
     // Get the 5 points closest to the map center
     std::vector<Eigen::Vector3f> closestPoints = GetClosestPointsToMapCenter();    
     // Draw the cube around those points
-    DrawCubeAroundPoints(closestPoints);
+    DrawCubeAroundPoints(closestPoints, "teeste");
 }
 
 void MapDrawer::DrawObject(const YoloDetect::Object& object) {
@@ -280,9 +281,9 @@ void MapDrawer::DrawObject(const YoloDetect::Object& object) {
             }
         }
     }
-    
+    std::string classID = object.classID;
     // Draw a cube around the valid points
-    DrawCubeAroundPoints(validPoints);
+    DrawCubeAroundPoints(validPoints,classID);
 }
 
 

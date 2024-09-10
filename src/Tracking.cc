@@ -1575,6 +1575,12 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
 {
     mImGray = im;
+    // Yolo
+    cv::Mat InputImage;
+    InputImage = im.clone();
+    mpYoloDetect->GetImage(InputImage);
+    mpYoloDetect->Detect();
+
     if(mImGray.channels()==3)
     {
         if(mbRGB)

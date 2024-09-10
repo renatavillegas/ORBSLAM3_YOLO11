@@ -15,7 +15,7 @@ public:
 	//struct for the objects.
 	typedef struct{
 		cv::Rect area;
-		int label; 
+		std::string classID; 
 		std::vector<cv::KeyPoint> keyPoints;
 		std::vector<MapPoint*> mapPoints;
 	} Object;	
@@ -32,7 +32,7 @@ public:
 	vector<torch::Tensor> non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
 	//thread function 
 	void Run();
-	void AddNewObject(int area_x, int area_y, int area_width, int area_height);
+	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID);
 	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
 	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
 	std::vector<Object> GetObjects();

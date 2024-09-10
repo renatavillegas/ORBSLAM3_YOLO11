@@ -315,14 +315,15 @@ void Viewer::Run()
             mpMapDrawer->DrawMapPoints();
 
         std::vector<YoloDetect::Object> objects = mpTracker->GetYoloDetectObject();
-        if (objects.empty())
-            return;
-
-        // Iterate over each object and draw it
-        for (const auto& object : objects)
+        if (!objects.empty())
         {
-            mpMapDrawer->DrawObject(object);
+            // Iterate over each object and draw it
+            for (const auto& object : objects)
+            {
+                mpMapDrawer->DrawObject(object);
+            }            
         }
+
 
         pangolin::FinishFrame();
 

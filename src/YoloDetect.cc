@@ -22,12 +22,12 @@ namespace ORB_SLAM3
     	}
 	}
 	//Just for test
-	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height)
+	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
 		newObject.area = cv::Rect(area_x, area_y, area_width, area_height);
-		newObject.label = 0;
+		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		mObjects.push_back(newObject);			
 	}
@@ -37,9 +37,10 @@ namespace ORB_SLAM3
 		//std::lock_guard<std::mutex> lock(mMutex);
 		if(mImage.empty())
 			return;
+		std::string id = "teste";
 		if(mObjects.size()<=1){
-			AddNewObject(150,150,200,200);
-			AddNewObject(200,200,100,200);
+			AddNewObject(150,150,200,200,id);
+			AddNewObject(0,0,200,200,id);
 		}
 	    // Preparing input tensor
 	    cv::resize(mImage, img, cv::Size(640, 640));
@@ -54,7 +55,8 @@ namespace ORB_SLAM3
     	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.89, 0.2);
     	if (dets.size() > 0)
     	{
-    		int x, y, l, h, left, top, bottom, right;
+    		int x, y, l, h, left, top, bottom, right, id;
+    		std::string classID;
 	        // Visualize result
 	        for (size_t i=0; i < dets[0].sizes()[0]; ++ i)
 	        {
@@ -62,14 +64,15 @@ namespace ORB_SLAM3
 	            top = dets[0][i][1].item().toInt() * mImage.rows / 640;
 	            right = dets[0][i][2].item().toInt() * mImage.cols / 640;
 	            bottom = dets[0][i][3].item().toInt() * mImage.rows / 640;
-	            int classID = dets[0][i][5].item().toInt();
-	            std::cout<<"ClassId:"<<mClassnames[classID]<<endl;
+	            id = dets[0][i][5].item().toInt();
+	         	classID = mClassnames[id];
+	            std::cout<<"ClassId:"<<mClassnames[id]<<endl;
 	        }
 	        x = left;
 	        y = bottom;
 	        l = right - left; 
 	        h = top -bottom;
-	        AddNewObject(x,y,l,h);
+	        AddNewObject(x,y,l,h, classID);
 	    }
 	
 	}
