@@ -29,6 +29,8 @@ public:
 	cv::Mat mImage;
 	//Yolo functions 
 	void GetImage(cv::Mat &image);
+	void LoadClassNames();
+
 	vector<torch::Tensor> non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
 	//thread function 
 	void Run();

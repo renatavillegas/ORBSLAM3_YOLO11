@@ -9,15 +9,23 @@ namespace ORB_SLAM3
 	static const int INPUT_H = 640;
 	YoloDetect::YoloDetect()
 	{
-		cout <<"Hello"<<endl;
-
+		LoadClassNames();
+	}
+void YoloDetect::LoadClassNames()
+	{
 		//load model 
 		mModule = torch::jit::load("yolov10n.torchscript");
 		//load classes
-		std::ifstream f("coco.names");
+		std::ifstream f("/home/oficina-robotica/ORB_SLAM3_2/coco.names");
+	    if (!f.is_open())
+	    {
+	        std::cerr << "Error: Could not open file coco.names" << std::endl;
+	        return; // return early if file cannot be opened
+	    }
     	std::string name = "";
    	 	while (std::getline(f, name))
      	{
+     		std::lock_guard<std::mutex> lock(mMutex); 
         	mClassnames.push_back(name);
     	}
 	}
@@ -43,6 +51,8 @@ namespace ORB_SLAM3
 			AddNewObject(0,0,200,200,id);
 		}
 	    // Preparing input tensor
+	    if(mImage.empty())
+	    	return;
 	    cv::resize(mImage, img, cv::Size(640, 640));
 	    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
 	    torch::Tensor imgTensor = torch::from_blob(img.data, {img.rows, img.cols,3},torch::kByte);
@@ -51,22 +61,20 @@ namespace ORB_SLAM3
 	    imgTensor = imgTensor.div(255);
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
-	    //std::cout<<"preds:"<<preds<<endl;
     	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.89, 0.2);
     	if (dets.size() > 0)
     	{
-    		int x, y, l, h, left, top, bottom, right, id;
-    		std::string classID;
+    		int x, y, l, h, left, top, bottom, right, index;
+    		std::string classID = "";
 	        // Visualize result
 	        for (size_t i=0; i < dets[0].sizes()[0]; ++ i)
 	        {
-	            left = dets[0][i][0].item().toInt() * mImage.cols / 640;
-	            top = dets[0][i][1].item().toInt() * mImage.rows / 640;
-	            right = dets[0][i][2].item().toInt() * mImage.cols / 640;
-	            bottom = dets[0][i][3].item().toInt() * mImage.rows / 640;
-	            id = dets[0][i][5].item().toInt();
-	         	classID = mClassnames[id];
-	            std::cout<<"ClassId:"<<mClassnames[id]<<endl;
+	            left = dets[0][i][0].item().toFloat() * mImage.cols / 640;
+	            top = dets[0][i][1].item().toFloat() * mImage.rows / 640;
+	            right = dets[0][i][2].item().toFloat() * mImage.cols / 640;
+	            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
+	            index = dets[0][i][5].item().toInt();
+	            classID = mClassnames[index];
 	        }
 	        x = left;
 	        y = bottom;
@@ -74,7 +82,7 @@ namespace ORB_SLAM3
 	        h = top -bottom;
 	        AddNewObject(x,y,l,h, classID);
 	    }
-	
+		return;
 	}
 	std::vector<YoloDetect::Object> YoloDetect::GetObjects()
     {
@@ -166,6 +174,7 @@ vector<torch::Tensor> YoloDetect::non_max_suppression(torch::Tensor preds, float
 
     void YoloDetect::GetImage(cv::Mat &image)
 	{
+		std::lock_guard<std::mutex> lock(mMutex);
     	mImage = image;
 	}
 	void YoloDetect::Run()
