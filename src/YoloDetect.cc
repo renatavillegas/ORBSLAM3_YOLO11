@@ -35,6 +35,7 @@ void YoloDetect::LoadClassNames()
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
 		newObject.area = cv::Rect(area_x, area_y, area_width, area_height);
+		cout<<"newObjectArea="<< newObject.area<<endl;
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		mObjects.push_back(newObject);			
@@ -45,11 +46,6 @@ void YoloDetect::LoadClassNames()
 		//std::lock_guard<std::mutex> lock(mMutex);
 		if(mImage.empty())
 			return;
-		std::string id = "teste";
-		if(mObjects.size()<=1){
-			AddNewObject(150,150,200,200,id);
-			AddNewObject(0,0,200,200,id);
-		}
 	    // Preparing input tensor
 	    if(mImage.empty())
 	    	return;
@@ -79,7 +75,7 @@ void YoloDetect::LoadClassNames()
 	        x = left;
 	        y = bottom;
 	        l = right - left; 
-	        h = top -bottom;
+	        h = bottom-top;
 	        AddNewObject(x,y,l,h, classID);
 	    }
 		return;
