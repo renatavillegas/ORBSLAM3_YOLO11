@@ -44,11 +44,9 @@ void YoloDetect::LoadClassNames()
 	{
 		cv::Mat img;
 		//std::lock_guard<std::mutex> lock(mMutex);
-		if(mImage.empty())
-			return;
+        if(mImage.empty())
+         	return;
 	    // Preparing input tensor
-	    if(mImage.empty())
-	    	return;
 	    cv::resize(mImage, img, cv::Size(640, 640));
 	    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
 	    torch::Tensor imgTensor = torch::from_blob(img.data, {img.rows, img.cols,3},torch::kByte);
@@ -57,30 +55,35 @@ void YoloDetect::LoadClassNames()
 	    imgTensor = imgTensor.div(255);
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
-    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.89, 0.2);
+    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.89, 0.4);
     	//check if the object is new 
-    	if (dets.size() > 0 && dets.size()>mObjects.size())
+    	if (dets.size() > 0)
     	{
-    		int x, y, l, h, left, top, bottom, right, index;
-    		std::string classID = "";
-	        // Visualize result
-	        for (size_t i=0; i < dets[0].sizes()[0]; ++ i)
-	        {
-	            left = dets[0][i][0].item().toFloat() * mImage.cols / 640;
-	            top = dets[0][i][1].item().toFloat() * mImage.rows / 640;
-	            right = dets[0][i][2].item().toFloat() * mImage.cols / 640;
-	            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
-	            index = dets[0][i][5].item().toInt();
-	            classID = mClassnames[index];
-	        }
-	        x = left;
-	        y = bottom;
-	        l = right - left; 
-	        h = bottom-top;
-	        AddNewObject(x,y,l,h, classID);
+//    		cout << "dets.size()="<<dets.size()<< " dets[0].sizes()[0]="<<dets[0].sizes()[0] << endl; 
+    		if(dets[0].sizes()[0]>mObjects.size())
+    		{
+	    		int x, y, l, h, left, top, bottom, right, index;
+	    		std::string classID = "";
+		        // Visualize result
+		        for (size_t i=0; i < dets[0].sizes()[0]; ++ i)
+		        {
+		            left = dets[0][i][0].item().toFloat() * mImage.cols / 640;
+		            top = dets[0][i][1].item().toFloat() * mImage.rows / 640;
+		            right = dets[0][i][2].item().toFloat() * mImage.cols / 640;
+		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
+		            index = dets[0][i][5].item().toInt();
+		            classID = mClassnames[index];
+		        }
+		        x = left;
+		        y = bottom;
+		        l = right - left; 
+		        h = bottom-top;
+		        AddNewObject(x,y,l,h, classID);    			
+    		}
 	    }
 		return;
 	}
+
 	std::vector<YoloDetect::Object> YoloDetect::GetObjects()
     {
     	if(!mObjects.empty())
