@@ -58,7 +58,8 @@ void YoloDetect::LoadClassNames()
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
     	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.89, 0.2);
-    	if (dets.size() > 0)
+    	//check if the object is new 
+    	if (dets.size() > 0 && dets.size()>mObjects.size())
     	{
     		int x, y, l, h, left, top, bottom, right, index;
     		std::string classID = "";
