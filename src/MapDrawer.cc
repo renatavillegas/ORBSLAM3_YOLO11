@@ -265,7 +265,8 @@ void MapDrawer::DrawRegion() {
 void MapDrawer::DrawObject(const YoloDetect::Object& object) {
     // Vector to store valid points
     std::vector<Eigen::Vector3f> validPoints;
-
+    glBegin(GL_POINTS);
+    glColor3f(1.0,0.0,0.0);
     // Collect all valid points
     for (const auto& mp : object.mapPoints)
     {
@@ -278,12 +279,15 @@ void MapDrawer::DrawObject(const YoloDetect::Object& object) {
             if (pos.array().isFinite().all())
             {
                 validPoints.push_back(pos);
+                glVertex3f(pos(0),pos(1),pos(2));
+                //cout<<"Draw"<<endl;
             }
         }
     }
+    glEnd();
     std::string classID = object.classID;
     // Draw a cube around the valid points
-    DrawCubeAroundPoints(validPoints,classID);
+//    DrawCubeAroundPoints(validPoints,classID);
 }
 
 

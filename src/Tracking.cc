@@ -3410,12 +3410,16 @@ void Tracking::SearchLocalPointsRegion(cv::Rect objectArea, int objectIndex)
             // Check if the projected point is inside the region of interest
             if (objectArea.contains(projectedPoint))
             {
+                cout<<"SearchLocalPointsRegion projected point and area: x="<<  pMP->mTrackProjX << ", y=" << pMP->mTrackProjY 
+                    <<" object area= "<< objectArea << endl;
                 // Use thread-safe method to set map points for the detected object
                 std::vector<MapPoint*> updatedMapPoints = mpYoloDetect->GetObjects()[objectIndex].mapPoints;
                 updatedMapPoints.push_back(pMP);
                 mpYoloDetect->SetMapPoints(objectIndex, updatedMapPoints);
+                vit = mvpLocalMapPoints.erase(vit);
+                continue;
             }
-            
+            ++vit;
         }
     }
 }

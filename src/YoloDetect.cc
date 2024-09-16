@@ -55,8 +55,7 @@ void YoloDetect::LoadClassNames()
 	    imgTensor = imgTensor.div(255);
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
-    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.89, 0.4);
-    	//check if the object is new 
+    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.8, 0.5);
     	if (dets.size() > 0)
     	{
 //    		cout << "dets.size()="<<dets.size()<< " dets[0].sizes()[0]="<<dets[0].sizes()[0] << endl; 
@@ -73,12 +72,18 @@ void YoloDetect::LoadClassNames()
 		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
 		            index = dets[0][i][5].item().toInt();
 		            classID = mClassnames[index];
+		            cv::rectangle(mImage, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(0, 255, 0), 2);
+		            cv::putText(mImage, classID, cv::Point(left, top - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
+
 		        }
+		        cv::imshow("Detections", mImage);
+		        cv::waitKey(10);	
 		        x = left;
 		        y = bottom;
 		        l = right - left; 
 		        h = bottom-top;
-		        AddNewObject(x,y,l,h, classID);    			
+		        cout << "x="<<x<<",y="<<y<<", l="<<l<<", h="<<h <<endl;
+		        AddNewObject(x,y,l,h, classID);
     		}
 	    }
 		return;
