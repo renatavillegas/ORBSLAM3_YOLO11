@@ -2970,11 +2970,24 @@ bool Tracking::TrackLocalMap()
     UpdateLocalMap();
     if(mDetectedObjectSize<mpYoloDetect->GetObjects().size()){
         //map only new objects
+        int a=0;
         for(int i= mDetectedObjectSize; i<mpYoloDetect->GetObjects().size(); i++){
             SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
+            for (vector<cv::KeyPoint>::iterator keypoint = mCurrentFrame.mvKeys.begin(),
+                keypointEnd = mCurrentFrame.mvKeys.end(); keypoint != keypointEnd; ++keypoint){
+                if (mpYoloDetect->GetObjects()[i].area.contains(keypoint->pt)){
+                    cout <<"keypoint inside the area"<<endl;
+                    a++;
+                    keypoint = mCurrentFrame.mvKeys.erase(keypoint);
+                }
+                else {
+                //++keypoint; // Avança o iterador se não foi apagado
+                }
+            }
         }
         mDetectedObjectSize = mpYoloDetect->GetObjects().size();
         cout << "mDetectedObjectSize=" << mDetectedObjectSize<<endl;
+        cout << "mCurrentFrame.mvKeys=" << mCurrentFrame.mvKeys.size()<< "a="<<a<<endl;;
     }
     SearchLocalPoints();
     // TOO check outliers before PO

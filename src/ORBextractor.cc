@@ -1160,10 +1160,9 @@ namespace ORB_SLAM3
                     desc.row(i).copyTo(descriptors.row(monoIndex));
                     monoIndex++;
                 }
-                 cv::Rect objectArea(150,150, 50, 50);
+                 cv::Rect objectArea(10,10, 1,1);
                  if (objectArea.contains(keypoint->pt)){
                     keypoint = keypoints.erase(keypoint);
-                    //cout<<"Removed!"<<endl;
                  }
                 i++;
             }
