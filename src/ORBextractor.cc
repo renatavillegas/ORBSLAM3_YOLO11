@@ -51,7 +51,6 @@
 *
 */
 
-
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -60,7 +59,6 @@
 #include <iostream>
 
 #include "ORBextractor.h"
-
 
 using namespace cv;
 using namespace std;
@@ -796,12 +794,12 @@ namespace ORB_SLAM3
 
             const float width = (maxBorderX-minBorderX);
             const float height = (maxBorderY-minBorderY);
-
+            //divide the image in grids   
             const int nCols = width/W;
             const int nRows = height/W;
             const int wCell = ceil(width/nCols);
             const int hCell = ceil(height/nRows);
-
+            //FAST keypoint detection
             for(int i=0; i<nRows; i++)
             {
                 const float iniY =minBorderY+i*hCell;
@@ -857,7 +855,7 @@ namespace ORB_SLAM3
                                  vKeysCell,minThFAST,true);
                         }*/
                     }
-
+                    //returns to the image size (not the grid)
                     if(!vKeysCell.empty())
                     {
                         for(vector<cv::KeyPoint>::iterator vit=vKeysCell.begin(); vit!=vKeysCell.end();vit++)
@@ -867,7 +865,6 @@ namespace ORB_SLAM3
                             vToDistributeKeys.push_back(*vit);
                         }
                     }
-
                 }
             }
 
@@ -1160,13 +1157,11 @@ namespace ORB_SLAM3
                     desc.row(i).copyTo(descriptors.row(monoIndex));
                     monoIndex++;
                 }
-                 cv::Rect objectArea(10,10, 1,1);
-                 if (objectArea.contains(keypoint->pt)){
-                    keypoint = keypoints.erase(keypoint);
-                 }
                 i++;
             }
         }
+        //mask is a Mat, and we have the Rect. We need crop the image on the object detection and pass it here. 
+        //similar solution: https://github.com/UZ-SLAMLab/ORB_SLAM3/issues/859
         //cout << "[ORBextractor]: extracted " << _keypoints.size() << " KeyPoints" << endl;
         return monoIndex;
     }
@@ -1187,7 +1182,7 @@ namespace ORB_SLAM3
                 resize(mvImagePyramid[level-1], mvImagePyramid[level], sz, 0, 0, INTER_LINEAR);
 
                 copyMakeBorder(mvImagePyramid[level], temp, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                               BORDER_REFLECT_101+BORDER_ISOLATED);
+                                   BORDER_REFLECT_101+BORDER_ISOLATED);
             }
             else
             {

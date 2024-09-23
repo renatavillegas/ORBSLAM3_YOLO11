@@ -1499,17 +1499,32 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
             cvtColor(imGrayRight,imGrayRight,cv::COLOR_BGRA2GRAY);
         }
     }
-
+    //add object areas to pass to orbExtractor
+    std::vector<cv::Rect2i> objectAreas;
+    if(!mpYoloDetect->GetObjects().empty())
+    {
+        mpObjects = mpYoloDetect->GetObjects();
+        for(int i = 0; i<mpObjects.size();i++)
+        {
+            objectAreas.push_back(mpObjects[i].area);
+            //cout<<"New object Area:" << objectAreas[i]<< endl;
+        }
+        mpORBextractorLeft->mvObjectArea = objectAreas;
+    }
     //cout << "Incoming frame creation" << endl;
-
-    if (mSensor == System::STEREO && !mpCamera2)
+    if (mSensor == System::STEREO && !mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
-    else if(mSensor == System::STEREO && mpCamera2)
+      // the dataset uses this - need to test on gazebo, but thats ok! 
+    }
+    else if(mSensor == System::STEREO && mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,mpCamera2,mTlr);
-    else if(mSensor == System::IMU_STEREO && !mpCamera2)
+    }
+    else if(mSensor == System::IMU_STEREO && !mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
-    else if(mSensor == System::IMU_STEREO && mpCamera2)
+    }
+    else if(mSensor == System::IMU_STEREO && mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,mpCamera2,mTlr,&mLastFrame,*mpImuCalib);
+    }
 
     //cout << "Incoming frame ended" << endl;
 
@@ -1579,6 +1594,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
     InputImage = im.clone();
     mpYoloDetect->GetImage(InputImage);
     mpYoloDetect->Detect();
+    std::vector<YoloDetect::Object> detectedObjects = mpYoloDetect->GetObjects();
 
     if(mImGray.channels()==3)
     {
@@ -2971,23 +2987,23 @@ bool Tracking::TrackLocalMap()
     if(mDetectedObjectSize<mpYoloDetect->GetObjects().size()){
         //map only new objects
         int a=0;
-        for(int i= mDetectedObjectSize; i<mpYoloDetect->GetObjects().size(); i++){
-            SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
-            for (vector<cv::KeyPoint>::iterator keypoint = mCurrentFrame.mvKeys.begin(),
-                keypointEnd = mCurrentFrame.mvKeys.end(); keypoint != keypointEnd; ++keypoint){
-                if (mpYoloDetect->GetObjects()[i].area.contains(keypoint->pt)){
-                    cout <<"keypoint inside the area"<<endl;
-                    a++;
-                    keypoint = mCurrentFrame.mvKeys.erase(keypoint);
-                }
-                else {
-                //++keypoint; // Avança o iterador se não foi apagado
-                }
-            }
-        }
-        mDetectedObjectSize = mpYoloDetect->GetObjects().size();
-        cout << "mDetectedObjectSize=" << mDetectedObjectSize<<endl;
-        cout << "mCurrentFrame.mvKeys=" << mCurrentFrame.mvKeys.size()<< "a="<<a<<endl;;
+        // for(int i= mDetectedObjectSize; i<mpYoloDetect->GetObjects().size(); i++){
+        //     //SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
+        //     for (vector<cv::KeyPoint>::iterator keypoint = mCurrentFrame.mvKeys.begin(),
+        //         keypointEnd = mCurrentFrame.mvKeys.end(); keypoint != keypointEnd; ++keypoint){
+        //         if (mpYoloDetect->GetObjects()[i].area.contains(keypoint->pt)){
+        //             cout <<"keypoint inside the area"<<endl;
+        //             a++;
+        //             keypoint = mCurrentFrame.mvKeys.erase(keypoint);
+        //         }
+        //         else {
+        //         //++keypoint; // Avança o iterador se não foi apagado
+        //         }
+        //     }
+        // }
+        // mDetectedObjectSize = mpYoloDetect->GetObjects().size();
+        // cout << "mDetectedObjectSize=" << mDetectedObjectSize<<endl;
+        // cout << "mCurrentFrame.mvKeys=" << mCurrentFrame.mvKeys.size()<< "a="<<a<<endl;;
     }
     SearchLocalPoints();
     // TOO check outliers before PO

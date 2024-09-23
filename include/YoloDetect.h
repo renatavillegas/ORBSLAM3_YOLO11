@@ -14,7 +14,8 @@ class YoloDetect
 public:
 	//struct for the objects.
 	typedef struct{
-		cv::Rect area;
+		cv::Rect2i area;
+		cv::Mat objectImage;
 		std::string classID; 
 		std::vector<cv::KeyPoint> keyPoints;
 		std::vector<MapPoint*> mapPoints;
@@ -34,7 +35,7 @@ public:
 	vector<torch::Tensor> non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
 	//thread function 
 	void Run();
-	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID);
+	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID, cv::Mat objectImage);
 	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
 	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
 	std::vector<Object> GetObjects();

@@ -30,14 +30,15 @@ void YoloDetect::LoadClassNames()
     	}
 	}
 	//Just for test
-	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID)
+	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID, cv::Mat objectImage)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
-		newObject.area = cv::Rect(area_x, area_y, area_width, area_height);
+		newObject.area = cv::Rect2i(area_x, area_y, area_width, area_height);
 		cout<<"newObjectArea="<< newObject.area<<endl;
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
+		newObject.objectImage = objectImage;
 		mObjects.push_back(newObject);			
 	}
 	void YoloDetect::Detect()
@@ -72,18 +73,27 @@ void YoloDetect::LoadClassNames()
 		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
 		            index = dets[0][i][5].item().toInt();
 		            classID = mClassnames[index];
+	                left = std::max(0, left);
+	                top = std::max(0, top);
+	                right = std::min(mImage.cols, right);
+	                bottom = std::min(mImage.rows, bottom);		            
+			        x = std::max(0, left);
+			        y = bottom;
+			        l = right - left; 
+			        h = bottom-top;		            
 		            cv::rectangle(mImage, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(0, 255, 0), 2);
 		            cv::putText(mImage, classID, cv::Point(left, top - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
+					cv::Rect objectROI(left, top, right, bottom);
+		            cv::Mat objectImage =  mImage(objectROI).clone();
+		           	cv::imshow("Detections", objectImage);
+		           	//cout<<"Rec="<< objectROI<< endl << "image size = "<< mImage.rows << "x" <<mImage.cols <<endl;
+		            cout << "x="<<x<<",y="<<y<<", l="<<l<<", h="<<h <<endl;
+		        	AddNewObject(x,y,l,h, classID, objectImage);
 
 		        }
-		        cv::imshow("Detections", mImage);
 		        cv::waitKey(10);	
-		        x = left;
-		        y = bottom;
-		        l = right - left; 
-		        h = bottom-top;
-		        cout << "x="<<x<<",y="<<y<<", l="<<l<<", h="<<h <<endl;
-		        AddNewObject(x,y,l,h, classID);
+
+
     		}
 	    }
 		return;

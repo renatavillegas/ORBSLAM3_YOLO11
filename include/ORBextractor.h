@@ -23,7 +23,6 @@
 #include <list>
 #include <opencv2/opencv.hpp>
 
-
 namespace ORB_SLAM3
 {
 
@@ -43,7 +42,7 @@ public:
 class ORBextractor
 {
 public:
-    
+    std::vector<cv::Rect2i> mvObjectArea;    
     enum {HARRIS_SCORE=0, FAST_SCORE=1 };
 
     ORBextractor(int nfeatures, float scaleFactor, int nlevels,

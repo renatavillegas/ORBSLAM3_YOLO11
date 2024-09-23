@@ -287,6 +287,7 @@ protected:
     bool bStepByStep;
     //Yolo detetion
     YoloDetect *mpYoloDetect;
+    std::vector<YoloDetect::Object> mpObjects;
     int mDetectedObjectSize;
     //Atlas
     Atlas* mpAtlas;
