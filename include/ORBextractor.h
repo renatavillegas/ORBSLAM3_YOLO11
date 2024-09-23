@@ -42,7 +42,7 @@ public:
 class ORBextractor
 {
 public:
-    std::vector<cv::Rect2i> mvObjectArea;    
+    std::vector<cv::Mat> mvObjectAreaMask;    
     enum {HARRIS_SCORE=0, FAST_SCORE=1 };
 
     ORBextractor(int nfeatures, float scaleFactor, int nlevels,

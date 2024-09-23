@@ -1500,16 +1500,16 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
         }
     }
     //add object areas to pass to orbExtractor
-    std::vector<cv::Rect2i> objectAreas;
+    std::vector<cv::Mat> objectAreaMask;
     if(!mpYoloDetect->GetObjects().empty())
     {
         mpObjects = mpYoloDetect->GetObjects();
         for(int i = 0; i<mpObjects.size();i++)
         {
-            objectAreas.push_back(mpObjects[i].area);
+            objectAreaMask.push_back(mpObjects[i].objectMask);
             //cout<<"New object Area:" << objectAreas[i]<< endl;
         }
-        mpORBextractorLeft->mvObjectArea = objectAreas;
+        mpORBextractorLeft->mvObjectAreaMask = objectAreaMask;
     }
     //cout << "Incoming frame creation" << endl;
     if (mSensor == System::STEREO && !mpCamera2){
