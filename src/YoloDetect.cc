@@ -30,7 +30,7 @@ void YoloDetect::LoadClassNames()
     	}
 	}
 	//Just for test
-	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID, cv::Mat objectImage)
+	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID, cv::Mat objectMask)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
@@ -38,7 +38,7 @@ void YoloDetect::LoadClassNames()
 		cout<<"newObjectArea="<< newObject.area<<endl;
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
-		newObject.objectImage = objectImage;
+		newObject.objectMask = objectMask;
 		mObjects.push_back(newObject);			
 	}
 	void YoloDetect::Detect()
@@ -57,6 +57,8 @@ void YoloDetect::LoadClassNames()
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
     	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.8, 0.5);
+    	//binary mask.
+    	cv::Mat objectMask = cv::Mat::ones(mImage.size(), CV_8UC1) * 255;
     	if (dets.size() > 0)
     	{
 //    		cout << "dets.size()="<<dets.size()<< " dets[0].sizes()[0]="<<dets[0].sizes()[0] << endl; 
@@ -84,11 +86,12 @@ void YoloDetect::LoadClassNames()
 		            cv::rectangle(mImage, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(0, 255, 0), 2);
 		            cv::putText(mImage, classID, cv::Point(left, top - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
 					cv::Rect objectROI(left, top, right, bottom);
-		            cv::Mat objectImage =  mImage(objectROI).clone();
-		           	cv::imshow("Detections", objectImage);
+					objectMask(objectROI).setTo(cv::Scalar(0));
+		            //objectMask= mImage(objectROI).clone();
+		           	cv::imshow("Detections", objectMask);
 		           	//cout<<"Rec="<< objectROI<< endl << "image size = "<< mImage.rows << "x" <<mImage.cols <<endl;
 		            cout << "x="<<x<<",y="<<y<<", l="<<l<<", h="<<h <<endl;
-		        	AddNewObject(x,y,l,h, classID, objectImage);
+		        	AddNewObject(x,y,l,h, classID, objectMask);
 
 		        }
 		        cv::waitKey(10);	

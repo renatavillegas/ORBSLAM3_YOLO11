@@ -15,7 +15,7 @@ public:
 	//struct for the objects.
 	typedef struct{
 		cv::Rect2i area;
-		cv::Mat objectImage;
+		cv::Mat objectMask;
 		std::string classID; 
 		std::vector<cv::KeyPoint> keyPoints;
 		std::vector<MapPoint*> mapPoints;
