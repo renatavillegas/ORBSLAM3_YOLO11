@@ -128,8 +128,30 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 
     mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
 #endif
-
+    int M = mvKeys.size();
+    std::vector<cv::KeyPoint> _mvKeys;
+    cv::Mat _mDescriptors;
+    cv::Mat mask = cv::Mat::zeros(540,540, CV_8UC1);
+    mask(cv::Rect(0, 0, 270, 540)).setTo(1);
+    if (M<9000 && M!=0){
+        int num=0;
+        for (int i =0; i< M; ++i){
+            int x_r = floor(mvKeys[i].pt.x);
+            int y_r = floor(mvKeys[i].pt.y);
+            // Similar solution:https://github.com/labourer-Lucas/YOLOv8_Masked_ORB_SLAM3/blob/4f8b54a0792e054c20d7dca72d03fb1707ec55ee/src/Frame.cc#L243
+            if((int)mask.at<uchar>(mvKeys[i].pt.y,mvKeys[i].pt.x)>0){
+                   _mvKeys.push_back(mvKeys[i]);
+                   _mDescriptors.push_back(mDescriptors.row(i));
+                }
+            else {
+                num+=1;
+                }
+        }
+    }
+    mvKeys = _mvKeys;
+    mDescriptors =_mDescriptors;
     N = mvKeys.size();
+    cout << "N=" << N << endl;
     if(mvKeys.empty())
         return;
 
