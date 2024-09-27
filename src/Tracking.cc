@@ -1501,21 +1501,28 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     }
     //add object areas to pass to orbExtractor
     std::vector<cv::Mat> objectAreaMask;
+    std::vector<cv::Rect2i> objectArea;
     if(!mpYoloDetect->GetObjects().empty())
     {
         mpObjects = mpYoloDetect->GetObjects();
         for(int i = 0; i<mpObjects.size();i++)
         {
             objectAreaMask.push_back(mpObjects[i].objectMask);
-            //cout<<"New object Area:" << objectAreas[i]<< endl;
+            objectArea.push_back(mpObjects[i].area);
+            cout<<"New object Area:" << objectArea[i]<< endl;
         }
-        mpORBextractorLeft->mvObjectAreaMask = objectAreaMask;
     }
     //cout << "Incoming frame creation" << endl;
-    if (mSensor == System::STEREO && !mpCamera2){
-        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
-      // the dataset uses this - need to test on gazebo, but thats ok! 
+    //yolo Detect frame
+    if (mSensor == System::STEREO && !mpCamera2 && !objectAreaMask.empty()){
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask);
+        //dataset and gazebo uses this.
     }
+    else if (mSensor == System::STEREO && !mpCamera2){
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+        //dataset and gazebo uses this.
+    }
+
     else if(mSensor == System::STEREO && mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,mpCamera2,mTlr);
     }
