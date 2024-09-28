@@ -384,7 +384,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 }
 
 //for yolo detection 
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, Frame* pPrevF, const IMU::Calib &ImuCalib)
+Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, std::vector<cv::KeyPoint> *objectKeyPoints, Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL), mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false),
      mpCamera(pCamera) ,mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mvObjectMasks(objectMasks)
@@ -420,9 +420,9 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     //cv::Mat mask = cv::Mat::zeros(imLeft.cols,imLeft.rows, CV_8UC1);
     cout<<"YoloDetect Frame!"<<endl;
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
-
-    if (M<9000 && M!=0){
+    if (M<9000 && M!=0 && objectKeyPoints!=nullptr){
         int num=0;
+        mvObjectKeyPoints = *objectKeyPoints;
         for (int i =0; i< M; ++i){
             int x_r = floor(mvKeys[i].pt.x);
             int y_r = floor(mvKeys[i].pt.y);
@@ -432,14 +432,17 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
                    _mDescriptors.push_back(mDescriptors.row(i));
                 }
             else {
+               objectKeyPoints->push_back(mvKeys[i]);
                 num+=1;
                 }
         }
     }
     mvKeys = _mvKeys;
     mDescriptors =_mDescriptors;
+
     N = mvKeys.size();
     cout << "N=" << N << endl;
+    cout << "num="<< objectKeyPoints->size()<<endl;
     if(mvKeys.empty())
         return;
 

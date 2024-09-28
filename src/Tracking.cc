@@ -1499,7 +1499,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
             cvtColor(imGrayRight,imGrayRight,cv::COLOR_BGRA2GRAY);
         }
     }
-    //add object areas to pass to orbExtractor
+    //add object areas to pass to frame!
     std::vector<cv::Mat> objectAreaMask;
     std::vector<cv::Rect2i> objectArea;
     if(!mpYoloDetect->GetObjects().empty())
@@ -1515,8 +1515,12 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //cout << "Incoming frame creation" << endl;
     //yolo Detect frame
     if (mSensor == System::STEREO && !mpCamera2 && !objectAreaMask.empty()){
-        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask);
+        std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints);
         //dataset and gazebo uses this.
+        if(!mpObjects.empty()&&!mpObjects[0].keyPoints.empty())
+            cout << "keypoint size="<< mpObjects[0].keyPoints.size()<<endl;
+
     }
     else if (mSensor == System::STEREO && !mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
@@ -1547,7 +1551,6 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     Track();
     //SearchLocalPointsRegion();
     //cout << "Tracking end" << endl;
-
     return mCurrentFrame.GetPose();
 }
 
