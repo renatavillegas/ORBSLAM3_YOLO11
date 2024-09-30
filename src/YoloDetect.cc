@@ -94,9 +94,7 @@ void YoloDetect::LoadClassNames()
 		        	AddNewObject(x,y,l,h, classID, objectMask);
 
 		        }
-		        cv::waitKey(10);	
-
-
+		        cv::waitKey(10);
     		}
 	    }
 		return;

@@ -384,7 +384,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 }
 
 //for yolo detection 
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, std::vector<cv::KeyPoint> *objectKeyPoints, Frame* pPrevF, const IMU::Calib &ImuCalib)
+Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, std::vector<cv::KeyPoint> *objectKeyPoints, std::vector<int> *objectIndexes, Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL), mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false),
      mpCamera(pCamera) ,mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mvObjectMasks(objectMasks)
@@ -417,28 +417,32 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     int M = mvKeys.size();
     std::vector<cv::KeyPoint> _mvKeys;
     cv::Mat _mDescriptors;
+//    std::vector<int> object_indexes;
     //cv::Mat mask = cv::Mat::zeros(imLeft.cols,imLeft.rows, CV_8UC1);
     cout<<"YoloDetect Frame!"<<endl;
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
     if (M<9000 && M!=0 && objectKeyPoints!=nullptr){
         int num=0;
-        mvObjectKeyPoints = *objectKeyPoints;
         for (int i =0; i< M; ++i){
             int x_r = floor(mvKeys[i].pt.x);
             int y_r = floor(mvKeys[i].pt.y);
             // Similar solution:https://github.com/labourer-Lucas/YOLOv8_Masked_ORB_SLAM3/blob/4f8b54a0792e054c20d7dca72d03fb1707ec55ee/src/Frame.cc#L243
             if((int)mvObjectMasks[0].at<uchar>(mvKeys[i].pt.y,mvKeys[i].pt.x)>0){
+                   //(keep)
                    _mvKeys.push_back(mvKeys[i]);
                    _mDescriptors.push_back(mDescriptors.row(i));
                 }
             else {
-               objectKeyPoints->push_back(mvKeys[i]);
+               //here are the points inside the mask (the one we can remove!)
+                objectKeyPoints->push_back(mvKeys[i]);
+                objectIndexes->push_back(i);
                 num+=1;
-                }
+                //cout<<"index="<<i<<endl;
+            }
         }
     }
-    mvKeys = _mvKeys;
-    mDescriptors =_mDescriptors;
+    //mvKeys = _mvKeys;
+    //mDescriptors =_mDescriptors;
 
     N = mvKeys.size();
     cout << "N=" << N << endl;
@@ -508,7 +512,23 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     monoRight = -1;
 
     AssignFeaturesToGrid();
-
+    // //check if the mapPoint were computed. The mapPoints are NULL at this point. it's just alocated. 
+    // if(!mvpMapPoints.empty() && mvpMapPoints.size() == mvKeys.size())
+    // {
+    //     //cout<<"mvpMapPoints size inside Frame constructor ="<< mvpMapPoints.size()<<endl;
+    //     for(int i = object_indexes.size() - 1; i >= 0; i--){
+    //         int index = object_indexes[i];
+    //         if (index >= 0 && index < mvpMapPoints.size()) {
+    //             objectKeyPoints->push_back(mvKeys[index]);
+    //             ORB_SLAM3::MapPoint* pMP = mvpMapPoints[index];
+    //             if (pMP != nullptr) {
+    //                 //Eigen::Vector3f pos = pMP->GetWorldPos();
+    //                 cout << "MapPoint inside mask, pos"<< pMP->mTrackProjX <<endl; 
+    //             }
+    //             cout <<"objectPoint: " << objectKeyPoints->back().pt.x << endl;
+    //         }
+    //     }
+    // }
 }
 
 

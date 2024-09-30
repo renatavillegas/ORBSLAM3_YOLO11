@@ -1516,10 +1516,17 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //yolo Detect frame
     if (mSensor == System::STEREO && !mpCamera2 && !objectAreaMask.empty()){
         std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
-        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints);
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints, &mvobjectIndexes);
         //dataset and gazebo uses this.
-        if(!mpObjects.empty()&&!mpObjects[0].keyPoints.empty())
+        if(!mvobjectIndexes.empty()&&!mpObjects[0].keyPoints.empty()&&!mvobjectIndexes.empty() && !mCurrentFrame.mvpMapPoints.empty()){
+            for(const auto& index: mvobjectIndexes)
+            {
+                mpObjects[0].mapPoints.push_back(mCurrentFrame.mvpMapPoints[index]);
+            }
             cout << "keypoint size="<< mpObjects[0].keyPoints.size()<<endl;
+            cout << "objectIndexes= "<<mvobjectIndexes.size()<<endl;
+            cout << "mpObjects[0].mapPoints=" << mpObjects[0].mapPoints.size()<<endl;;
+        }
 
     }
     else if (mSensor == System::STEREO && !mpCamera2){
@@ -1546,7 +1553,16 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
     vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);
 #endif
-
+    if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
+        cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
+        ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[0]];
+        if (pMP != nullptr) {
+            Eigen::Vector3f pos = pMP->GetWorldPos();
+            cout << "MapPoint inside mask, pos"<< pMP->mTrackProjX <<endl;
+        }
+    }
+    // else
+//        cout<<"sometimes it's empty"<<endl;
     //cout << "Tracking start" << endl;
     Track();
     //SearchLocalPointsRegion();

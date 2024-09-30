@@ -289,6 +289,7 @@ protected:
     YoloDetect *mpYoloDetect;
     std::vector<YoloDetect::Object> mpObjects;
     int mDetectedObjectSize;
+    std::vector<int> mvobjectIndexes;
     //Atlas
     Atlas* mpAtlas;
 

@@ -68,7 +68,7 @@ public:
     Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
     //Constructor for yolo detection images 
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, std::vector<cv::KeyPoint> *objectKeyPoints, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, std::vector<cv::KeyPoint> *objectKeyPoints, std::vector<int> *objectIndexes, Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
     // Destructor
     // ~Frame();
 
@@ -307,7 +307,6 @@ public:
 
     //yolo detected object mask.
     std::vector<cv::Mat>mvObjectMasks;
-    std::vector<cv::KeyPoint> mvObjectKeyPoints;
 private:
 
     // Undistort keypoints given OpenCV distortion parameters.
