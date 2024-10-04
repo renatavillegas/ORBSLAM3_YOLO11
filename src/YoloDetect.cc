@@ -41,6 +41,10 @@ void YoloDetect::LoadClassNames()
 		newObject.objectMask = objectMask;
 		mObjects.push_back(newObject);			
 	}
+	void YoloDetect::ClearObjects()
+	{
+		mObjects.clear();
+	}
 	void YoloDetect::Detect()
 	{
 		cv::Mat img;
@@ -58,6 +62,7 @@ void YoloDetect::LoadClassNames()
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
     	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.8, 0.5);
     	//binary mask.
+    	cout <<mImage.size()<<endl;
     	cv::Mat objectMask = cv::Mat::ones(mImage.size(), CV_8UC1) * 255;
     	if (dets.size() > 0)
     	{
@@ -85,11 +90,12 @@ void YoloDetect::LoadClassNames()
 			        h = bottom-top;		            
 		            cv::rectangle(mImage, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(0, 255, 0), 2);
 		            cv::putText(mImage, classID, cv::Point(left, top - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
-					cv::Rect objectROI(left, top, right, bottom);
+					cv::Rect objectROI(left, top, l, h);
+					cout<<"Rec="<< objectROI<< endl;
 					objectMask(objectROI).setTo(cv::Scalar(0));
 		            //objectMask= mImage(objectROI).clone();
-		           	cv::imshow("Detections", objectMask);
-		           	//cout<<"Rec="<< objectROI<< endl << "image size = "<< mImage.rows << "x" <<mImage.cols <<endl;
+		           	//cv::imshow("Detections", objectMask);
+		           	cout<<"Rec="<< objectROI<< endl << "image size = "<< mImage.rows << "x" <<mImage.cols <<endl;
 		            cout << "x="<<x<<",y="<<y<<", l="<<l<<", h="<<h <<endl;
 		        	AddNewObject(x,y,l,h, classID, objectMask);
 

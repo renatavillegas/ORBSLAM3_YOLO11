@@ -39,6 +39,7 @@ public:
 	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
 	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
 	std::vector<Object> GetObjects();
+	void ClearObjects();
 	bool newObjct;
 private:
 	std::mutex mMutex;

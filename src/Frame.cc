@@ -441,8 +441,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
             }
         }
     }
-    //mvKeys = _mvKeys;
-    //mDescriptors =_mDescriptors;
+    mvKeys = _mvKeys;
+    mDescriptors =_mDescriptors;
 
     N = mvKeys.size();
     cout << "N=" << N << endl;

@@ -1553,20 +1553,19 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
     vdStereoMatch_ms.push_back(mCurrentFrame.mTimeStereoMatch);
 #endif
-    if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
-        cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
-        ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[0]];
-        if (pMP != nullptr) {
-            Eigen::Vector3f pos = pMP->GetWorldPos();
-            cout << "MapPoint inside mask, pos"<< pMP->mTrackProjX <<endl;
-        }
-    }
     // else
 //        cout<<"sometimes it's empty"<<endl;
     //cout << "Tracking start" << endl;
     Track();
-    //SearchLocalPointsRegion();
+    // if(!mpObjects.empty()){
+    //     SearchLocalPointsRegion(mpObjects[0].area, 0);
+    // }
     //cout << "Tracking end" << endl;
+    mpObjects.clear();
+    mpYoloDetect->ClearObjects();
+    mCurrentFrame.mvpMapPoints.clear();
+    mvobjectIndexes.clear();        
+
     return mCurrentFrame.GetPose();
 }
 
@@ -2298,6 +2297,7 @@ void Tracking::Track()
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
             bool bNeedKF = NeedNewKeyFrame();
+            cout <<"needKF="<< bNeedKF<<endl;
 
             // Check if we need to insert a new keyframe
             // if(bNeedKF && bOK)
@@ -2321,6 +2321,18 @@ void Tracking::Track()
                 if(mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
                     mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
             }
+            if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
+                cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
+                ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[0]];
+                if (pMP != nullptr) {
+                    Eigen::Vector3f pos = pMP->GetWorldPos();
+                    cout << "MapPoint inside mask, pos"<< pMP->mTrackProjX <<endl;
+                }
+                else{
+                    cout << "pMP is null at mvobjectIndexes[0]="<<mvobjectIndexes[0] <<endl;
+                } 
+            }
+
         }
 
         // Reset if the camera get lost soon after initialization
@@ -3010,9 +3022,9 @@ bool Tracking::TrackLocalMap()
     mTrackedFr++;
 
     UpdateLocalMap();
-    if(mDetectedObjectSize<mpYoloDetect->GetObjects().size()){
+    //if(mDetectedObjectSize<mpYoloDetect->GetObjects().size()){
         //map only new objects
-        int a=0;
+        //int a=0;
         // for(int i= mDetectedObjectSize; i<mpYoloDetect->GetObjects().size(); i++){
         //     //SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
         //     for (vector<cv::KeyPoint>::iterator keypoint = mCurrentFrame.mvKeys.begin(),
@@ -3030,8 +3042,8 @@ bool Tracking::TrackLocalMap()
         // mDetectedObjectSize = mpYoloDetect->GetObjects().size();
         // cout << "mDetectedObjectSize=" << mDetectedObjectSize<<endl;
         // cout << "mCurrentFrame.mvKeys=" << mCurrentFrame.mvKeys.size()<< "a="<<a<<endl;;
-    }
-    SearchLocalPoints();
+    //}
+    //SearchLocalPoints();
     // TOO check outliers before PO
     int aux1 = 0, aux2=0;
     for(int i=0; i<mCurrentFrame.N; i++)
