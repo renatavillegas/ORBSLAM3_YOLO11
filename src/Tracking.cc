@@ -1518,16 +1518,6 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
         std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints, &mvobjectIndexes);
         //dataset and gazebo uses this.
-        if(!mvobjectIndexes.empty()&&!mpObjects[0].keyPoints.empty()&&!mvobjectIndexes.empty() && !mCurrentFrame.mvpMapPoints.empty()){
-            for(const auto& index: mvobjectIndexes)
-            {
-                mpObjects[0].mapPoints.push_back(mCurrentFrame.mvpMapPoints[index]);
-            }
-            cout << "keypoint size="<< mpObjects[0].keyPoints.size()<<endl;
-            cout << "objectIndexes= "<<mvobjectIndexes.size()<<endl;
-            cout << "mpObjects[0].mapPoints=" << mpObjects[0].mapPoints.size()<<endl;;
-        }
-
     }
     else if (mSensor == System::STEREO && !mpCamera2){
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
@@ -1563,7 +1553,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //cout << "Tracking end" << endl;
     mpObjects.clear();
     mpYoloDetect->ClearObjects();
-    mCurrentFrame.mvpMapPoints.clear();
+    //mCurrentFrame.mvpMapPoints.clear();
     mvobjectIndexes.clear();        
 
     return mCurrentFrame.GetPose();
@@ -2303,7 +2293,26 @@ void Tracking::Track()
             // if(bNeedKF && bOK)
             if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
                                    (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
+            {
                 CreateNewKeyFrame();
+                //in theory, the map points are populated here. So, if a new KeyFrame is created, the mapPoints will have a value,
+                //if not, they'll be null. 
+                if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
+                    cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
+                    for(int i =0; i<mvobjectIndexes.size(); i++){
+                        ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]];
+                        if (pMP != nullptr) {
+                            Eigen::Vector3f pos = pMP->GetWorldPos();
+                            cout << "MapPoint inside mask, pos= "<< pos.x() << " " <<pos.y() <<endl;
+                        }
+                        else{
+                            cout << "pMP is null at mvobjectIndexes[0]="<<mvobjectIndexes[0] <<endl;
+                        }                         
+                    }
+                }
+
+
+            }
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
@@ -2321,18 +2330,6 @@ void Tracking::Track()
                 if(mCurrentFrame.mvpMapPoints[i] && mCurrentFrame.mvbOutlier[i])
                     mCurrentFrame.mvpMapPoints[i]=static_cast<MapPoint*>(NULL);
             }
-            if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
-                cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
-                ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[0]];
-                if (pMP != nullptr) {
-                    Eigen::Vector3f pos = pMP->GetWorldPos();
-                    cout << "MapPoint inside mask, pos"<< pMP->mTrackProjX <<endl;
-                }
-                else{
-                    cout << "pMP is null at mvobjectIndexes[0]="<<mvobjectIndexes[0] <<endl;
-                } 
-            }
-
         }
 
         // Reset if the camera get lost soon after initialization
@@ -3380,6 +3377,7 @@ void Tracking::CreateNewKeyFrame()
                     Eigen::Vector3f x3D;
 
                     if(mCurrentFrame.Nleft == -1){
+                        //here it gets the keypoint on i mvKeysUn[i].pt.y;
                         mCurrentFrame.UnprojectStereo(i, x3D);
                     }
                     else{
