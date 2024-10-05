@@ -2246,14 +2246,17 @@ void Tracking::Track()
         mpFrameDrawer->Update(this);
         pCurrentMap->EraseObjectMapPoints();
         // Add the current map points in the vector
-        for (int i = 0; i < mCurrentFrame.N; i++)
+        if(!mvobjectIndexes.empty())
         {
-            if (mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
+            for (int i = 0; i < mvobjectIndexes.size(); i++)
             {
-                pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[i]);
+                if (mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]])
+                {
+                    pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]]);
+                }
             }
-        }
 
+        }
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 
@@ -2307,19 +2310,19 @@ void Tracking::Track()
                 CreateNewKeyFrame();
                 //in theory, the map points are populated here. So, if a new KeyFrame is created, the mapPoints will have a value,
                 //if not, they'll be null. 
-                if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
-                    cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
-                    for(int i =0; i<mvobjectIndexes.size(); i++){
-                        ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]];
-                        if (pMP != nullptr) {
-                            Eigen::Vector3f pos = pMP->GetWorldPos();
-                            cout << "MapPoint inside mask, pos= "<< pos.x() << " " <<pos.y() <<endl;
-                        }
-                        else{
-                            cout << "pMP is null at mvobjectIndexes[0]="<<mvobjectIndexes[0] <<endl;
-                        }                         
-                    }
-                }
+                // if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
+                //     cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
+                //     for(int i =0; i<mvobjectIndexes.size(); i++){
+                //         ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]];
+                //         if (pMP != nullptr) {
+                //             Eigen::Vector3f pos = pMP->GetWorldPos();
+                //             cout << "MapPoint inside mask, pos= "<< pos.x() << " " <<pos.y() <<endl;
+                //         }
+                //         else{
+                //             cout << "pMP is null at mvobjectIndexes[0]="<<mvobjectIndexes[0] <<endl;
+                //         }                         
+                //     }
+                // }
 
 
             }
