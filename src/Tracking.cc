@@ -2244,6 +2244,16 @@ void Tracking::Track()
 
         // Update drawer
         mpFrameDrawer->Update(this);
+        pCurrentMap->EraseObjectMapPoints();
+        // Add the current map points in the vector
+        for (int i = 0; i < mCurrentFrame.N; i++)
+        {
+            if (mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
+            {
+                pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[i]);
+            }
+        }
+
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 

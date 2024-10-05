@@ -85,6 +85,11 @@ public:
     std::vector<MapPoint*> GetAllMapPoints();
     std::vector<MapPoint*> GetReferenceMapPoints();
 
+    //manage the Yolo object MapPoints
+    void AddObjectMapPoint(MapPoint *pMP);
+    void EraseObjectMapPoints();
+    std::vector<MapPoint*> GetAllObjectMapPoints();
+
     long unsigned int MapPointsInMap();
     long unsigned  KeyFramesInMap();
 
@@ -161,6 +166,8 @@ protected:
 
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
+    //yolo object mapPoints 
+    std::set<MapPoint*> mspObjectMapPoints;
 
     // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
     std::vector<MapPoint*> mvpBackupMapPoints;

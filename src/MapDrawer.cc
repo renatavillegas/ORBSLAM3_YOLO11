@@ -617,4 +617,28 @@ void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin
     MOw.m[13] = Twc(1,3);
     MOw.m[14] = Twc(2,3);
 }
+
+void MapDrawer::DrawObjectMapPoints()
+{
+    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    if(!pActiveMap)
+        return;
+
+    // Define points
+    const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetAllObjectMapPoints();
+    glPointSize(5);
+    glBegin(GL_POINTS);
+    glColor3f(0.0, 1.0, 0.0);
+
+    // All map points
+    for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
+    {
+        if ((*i)->isBad())
+            continue;
+        Eigen::Matrix<float,3,1> pos = (*i)->GetWorldPos();
+        glVertex3f(pos(0), pos(1), pos(2));
+    }
+    glEnd();    
+}
+
 } //namespace ORB_SLAM

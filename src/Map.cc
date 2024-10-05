@@ -55,6 +55,7 @@ Map::~Map()
 
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
+    mspObjectMapPoints.clear();
 }
 
 void Map::AddKeyFrame(KeyFrame *pKF)
@@ -488,6 +489,24 @@ void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long u
     }
 
     mvpBackupMapPoints.clear();
+}
+
+//yolo object mapPoits 
+void Map::AddObjectMapPoint(MapPoint *pMP)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mspObjectMapPoints.insert(pMP);   
+}
+void Map::EraseObjectMapPoints()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mspObjectMapPoints.clear();   
+}
+
+std::vector<MapPoint*> Map::GetAllObjectMapPoints()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return vector<MapPoint*>(mspObjectMapPoints.begin(),mspObjectMapPoints.end());
 }
 
 
