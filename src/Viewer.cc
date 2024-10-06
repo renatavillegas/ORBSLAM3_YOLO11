@@ -321,7 +321,7 @@ void Viewer::Run()
             // Iterate over each object and draw it
             for (const auto& object : objects)
             {
-                mpMapDrawer->DrawObjectMapPoints();
+                mpMapDrawer->DrawObjectMapPoints(object);
             }            
         }
 

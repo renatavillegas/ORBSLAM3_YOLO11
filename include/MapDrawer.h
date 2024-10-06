@@ -54,7 +54,7 @@ public:
     std::vector<Eigen::Vector3f> GetClosestPointsToMapCenter();
     void DrawRegion();
     void DrawObject(const YoloDetect::Object& object);
-    void DrawObjectMapPoints();
+    void DrawObjectMapPoints(const YoloDetect::Object& object);
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);

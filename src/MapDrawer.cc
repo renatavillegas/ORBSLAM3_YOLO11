@@ -233,26 +233,32 @@ std::vector<Eigen::Vector3f> MapDrawer::GetClosestPointsToMapCenter() {
 }
 
 void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID) {
-    if (points.size() < 5) {
-//        std::cerr << "Not enough points to draw the cube." << std::endl;
+    
+    if (points.empty()) {
         return;
     }
-
-    // Compute the centroid of the given points
-    Eigen::Vector3f centroid = CalculateCentroid(points);
-    float max_distance = FindMaxDistance(centroid, points);
-
-    // Render the cube
+    Eigen::Vector3f minPoint,maxPoint;
+    minPoint = points[0];
+    maxPoint = points[0];
+    for (const auto& point : points) {
+        minPoint = minPoint.cwiseMin(point);
+        maxPoint = maxPoint.cwiseMax(point);
+    }
+    float padding = 0.1;
+    Eigen::Vector3f minPadded = minPoint - Eigen::Vector3f(padding, padding, padding);
+    Eigen::Vector3f maxPadded = maxPoint + Eigen::Vector3f(padding, padding, padding);
+    Eigen::Vector3f center = (minPadded + maxPadded) / 2.0f;
+    Eigen::Vector3f scale = (maxPadded - minPadded) / 2.0f;
     glPushMatrix();
-    glTranslatef(centroid(0), centroid(1), centroid(2));
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    pangolin::glDrawColouredCube(max_distance);
+    glTranslatef(center[0], center[1], center[2]);
+    glScalef(scale[0], scale[1], scale[2]);
+    pangolin::glDrawColouredCube();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     InitializeGLUT();
-    std::string text = "ClassID: " + classID; 
-    RenderText(text, centroid(0) + 0.1, centroid(1));
+    std::string text = "ClassID: " + classID;
+    RenderText(text, maxPadded[0] + 0.1, maxPadded[1]+0.1);
     glPopMatrix();
-    //std::cout << "Draw" << std::endl;
 }
 
 void MapDrawer::DrawRegion() {
@@ -618,12 +624,12 @@ void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin
     MOw.m[14] = Twc(2,3);
 }
 
-void MapDrawer::DrawObjectMapPoints()
+void MapDrawer::DrawObjectMapPoints(const YoloDetect::Object& object)
 {
     Map* pActiveMap = mpAtlas->GetCurrentMap();
     if(!pActiveMap)
         return;
-
+    std::vector<Eigen::Vector3f> validPoints;
     // Define points
     const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetAllObjectMapPoints();
     glPointSize(5);
@@ -637,8 +643,13 @@ void MapDrawer::DrawObjectMapPoints()
             continue;
         Eigen::Matrix<float,3,1> pos = (*i)->GetWorldPos();
         glVertex3f(pos(0), pos(1), pos(2));
+        validPoints.push_back(pos);
     }
-    glEnd();    
+    glEnd();
+    std::string classID = object.classID;
+    // Draw a cube around the valid points
+    DrawCubeAroundPoints(validPoints,classID);
+
 }
 
 } //namespace ORB_SLAM
