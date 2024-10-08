@@ -1502,21 +1502,31 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //add object areas to pass to frame!
     std::vector<cv::Mat> objectAreaMask;
     std::vector<cv::Rect2i> objectArea;
+    std::vector<std::vector<int>> mvObjectIndexes;
+    std::vector<string> objectIds;
     if(!mpYoloDetect->GetObjects().empty())
     {
         mpObjects = mpYoloDetect->GetObjects();
         for(int i = 0; i<mpObjects.size();i++)
         {
+            mvObjectIndexes.resize(mpObjects.size());
             objectAreaMask.push_back(mpObjects[i].objectMask);
             objectArea.push_back(mpObjects[i].area);
+            objectIds.push_back(mpObjects[i].classID);
             cout<<"New object Area:" << objectArea[i]<< endl;
         }
+        cout << "Number of masks: " << objectAreaMask.size() << endl;
+        cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
+        cout << "Number of object IDs: " << objectIds.size() << endl;
+
     }
     //cout << "Incoming frame creation" << endl;
     //yolo Detect frame
     if (mSensor == System::STEREO && !mpCamera2 && !objectAreaMask.empty()){
-        std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
-        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints, &mvobjectIndexes);
+        //std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
+        //here we can pass an array of indexes arrays and an array of objectMasks. 
+        //mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints, &mvobjectIndexes);
+        mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, objectAreaMask, &mvObjectIndexes, objectIds);
         //dataset and gazebo uses this.
     }
     else if (mSensor == System::STEREO && !mpCamera2){
