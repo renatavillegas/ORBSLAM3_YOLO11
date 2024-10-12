@@ -1502,7 +1502,6 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //add object areas to pass to frame!
     std::vector<cv::Mat> objectAreaMask;
     std::vector<cv::Rect2i> objectArea;
-    std::vector<std::vector<int>> mvObjectIndexes;
     std::vector<string> objectIds;
     if(!mpYoloDetect->GetObjects().empty())
     {
@@ -1564,7 +1563,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     mpObjects.clear();
     mpYoloDetect->ClearObjects();
     //mCurrentFrame.mvpMapPoints.clear();
-    mvobjectIndexes.clear();        
+    mvObjectIndexes.clear();        
 
     return mCurrentFrame.GetPose();
 }
@@ -1848,7 +1847,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-
     if (bStepByStep)
     {
         std::cout << "Tracking: Waiting to the next step" << std::endl;
@@ -2256,16 +2254,15 @@ void Tracking::Track()
         mpFrameDrawer->Update(this);
         pCurrentMap->EraseObjectMapPoints();
         // Add the current map points in the vector
-        if(!mvobjectIndexes.empty())
-        {
-            for (int i = 0; i < mvobjectIndexes.size(); i++)
-            {
-                if (mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]])
-                {
-                    pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]]);
+        if (!mvObjectIndexes.empty()) {
+            for (int i = 0; i < mvObjectIndexes.size(); i++) {
+                for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
+                    int index = mvObjectIndexes[i][j]; 
+                    if (mCurrentFrame.mvpMapPoints[index]) {
+                        pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index]);
+                    }
                 }
             }
-
         }
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
@@ -2310,7 +2307,6 @@ void Tracking::Track()
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
             bool bNeedKF = NeedNewKeyFrame();
-            cout <<"needKF="<< bNeedKF<<endl;
 
             // Check if we need to insert a new keyframe
             // if(bNeedKF && bOK)
@@ -2318,22 +2314,6 @@ void Tracking::Track()
                                    (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
             {
                 CreateNewKeyFrame();
-                //in theory, the map points are populated here. So, if a new KeyFrame is created, the mapPoints will have a value,
-                //if not, they'll be null. 
-                // if(!mCurrentFrame.mvpMapPoints.empty()&&!mvobjectIndexes.empty()){
-                //     cout<<"mCurrentFrame.mvpMapPoints.size = "<<mCurrentFrame.mvpMapPoints.size()<<endl;
-                //     for(int i =0; i<mvobjectIndexes.size(); i++){
-                //         ORB_SLAM3::MapPoint* pMP = mCurrentFrame.mvpMapPoints[mvobjectIndexes[i]];
-                //         if (pMP != nullptr) {
-                //             Eigen::Vector3f pos = pMP->GetWorldPos();
-                //             cout << "MapPoint inside mask, pos= "<< pos.x() << " " <<pos.y() <<endl;
-                //         }
-                //         else{
-                //             cout << "pMP is null at mvobjectIndexes[0]="<<mvobjectIndexes[0] <<endl;
-                //         }                         
-                //     }
-                // }
-
 
             }
 

@@ -495,7 +495,7 @@ void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long u
 void Map::AddObjectMapPoint(MapPoint *pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
-    mspObjectMapPoints.insert(pMP);   
+    mspObjectMapPoints.insert(pMP);
 }
 void Map::EraseObjectMapPoints()
 {

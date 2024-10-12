@@ -574,11 +574,12 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
             int y_r = floor(mvKeys[i].pt.y);
             bool insideMask = false;
             for (size_t maskIndex = 0; maskIndex < mvObjectMasks.size(); ++maskIndex) {
-                if ((int)mvObjectMasks[maskIndex].at<uchar>(y_r, x_r) == 0) {
+                if ((int)mvObjectMasks[maskIndex].at<uchar>(y_r, x_r) >0) {
                     //keypoint inside the mask. If it's a person, we can ignore these points
-                    cout <<"classID="<<objectIds[maskIndex]<<endl;
+                    //cout <<"classID="<<objectIds[maskIndex]<<endl;
                     if(objectIds[maskIndex] == "person")
                     {
+                        (*objectIndexes)[maskIndex].push_back(i);
                         insideMask = true;
                         break;
                     } else {
@@ -597,11 +598,10 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
             }
         }
     }
-    mvKeys = _mvKeys;
-    mDescriptors =_mDescriptors;
+//    mvKeys = _mvKeys;
+//    mDescriptors =_mDescriptors;
 
     N = mvKeys.size();
-    cout << "N=" << N << endl;
     if(mvKeys.empty())
         return;
 
