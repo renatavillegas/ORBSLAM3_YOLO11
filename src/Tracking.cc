@@ -2252,9 +2252,9 @@ void Tracking::Track()
 
         // Update drawer
         mpFrameDrawer->Update(this);
-        pCurrentMap->EraseObjectMapPoints();
         // Add the current map points in the vector
         if (!mvObjectIndexes.empty()) {
+            pCurrentMap->EraseObjectMapPoints();
             for (int i = 0; i < mvObjectIndexes.size(); i++) {
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
                     int index = mvObjectIndexes[i][j]; 

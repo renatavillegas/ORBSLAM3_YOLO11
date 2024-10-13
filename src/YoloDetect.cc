@@ -60,12 +60,11 @@ void YoloDetect::LoadClassNames()
 	    imgTensor = imgTensor.div(255);
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
-    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.8, 0.5);
-    	//binary mask.
-    	cv::Mat objectMask = cv::Mat::zeros(mImage.size(), CV_8UC1) * 255;
+    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.5, 0.9);
+    	//cout << "preds = " << preds <<endl;
     	if (dets.size() > 0)
     	{
-//    		cout << "dets.size()="<<dets.size()<< " dets[0].sizes()[0]="<<dets[0].sizes()[0] << endl; 
+    		cout << "dets.size()="<<dets.size()<< " dets[0].sizes()[0]="<<dets[0].sizes()[0] << endl; 
     		if(dets[0].sizes()[0]>mObjects.size())
     		{
 	    		int x, y, l, h, left, top, bottom, right, index;
@@ -73,10 +72,13 @@ void YoloDetect::LoadClassNames()
 		        // Visualize result
 		        for (size_t i=0; i < dets[0].sizes()[0]; ++ i)
 		        {
+		        	//binary mask.
+    				cv::Mat objectMask = cv::Mat::zeros(mImage.size(), CV_8UC1) * 255;
+
 		            left = dets[0][i][0].item().toFloat() * mImage.cols / 640;
-		            top = dets[0][i][1].item().toFloat() * mImage.rows / 640;
+		            top = dets[0][i][1].item().toFloat() * mImage.rows / 384;
 		            right = dets[0][i][2].item().toFloat() * mImage.cols / 640;
-		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
+		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 384;
 		            index = dets[0][i][5].item().toInt();
 		            classID = mClassnames[index];
 	                left = std::max(0, left);
@@ -85,8 +87,8 @@ void YoloDetect::LoadClassNames()
 	                bottom = std::min(mImage.rows, bottom);		            
 			        x = std::max(0, left);
 			        y = bottom;
-			        l = right - left; 
-			        h = bottom-top;		            
+			        l = right - left;
+			        h = bottom-top;       
 		            cv::rectangle(mImage, cv::Point(left, top), cv::Point(right, bottom), cv::Scalar(0, 255, 0), 2);
 		            cv::putText(mImage, classID, cv::Point(left, top - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
 					cv::Rect objectROI(left, top, l, h);
@@ -136,61 +138,72 @@ vector<torch::Tensor> YoloDetect::non_max_suppression(torch::Tensor preds, float
     for (size_t i=0; i < preds.sizes()[0]; ++i)
     {
         torch::Tensor pred = preds.select(0, i);
-
+        cout << "preds " << i << "=" << pred<<endl;
         // Filter by scores
         torch::Tensor scores = pred.select(1, 4);
         pred = torch::index_select(pred, 0, torch::nonzero(scores > score_thresh).select(1, 0));
-        if (pred.sizes()[0] == 0) continue;
-
-        // (center_x, center_y, w, h) to (left, top, right, bottom)
-        pred.select(1, 0) = pred.select(1, 0) - pred.select(1, 2) / 2;
-        pred.select(1, 1) = pred.select(1, 1) - pred.select(1, 3) / 2;
-        pred.select(1, 2) = pred.select(1, 0) + pred.select(1, 2);
-        pred.select(1, 3) = pred.select(1, 1) + pred.select(1, 3);
-
-        // Computing scores and classes
-        std::tuple<torch::Tensor, torch::Tensor> max_tuple = torch::max(pred.slice(1, 5, pred.sizes()[1]), 1);
-        pred.select(1, 4) = pred.select(1, 4) * std::get<0>(max_tuple);
-        pred.select(1, 5) = std::get<1>(max_tuple);
-
-        torch::Tensor  dets = pred.slice(1, 0, 6);
-
-        torch::Tensor keep = torch::empty({dets.sizes()[0]});
-        torch::Tensor areas = (dets.select(1, 3) - dets.select(1, 1)) * (dets.select(1, 2) - dets.select(1, 0));
-        std::tuple<torch::Tensor, torch::Tensor> indexes_tuple = torch::sort(dets.select(1, 4), 0, 1);
-        torch::Tensor v = std::get<0>(indexes_tuple);
-        torch::Tensor indexes = std::get<1>(indexes_tuple);
-        int count = 0;
-        while (indexes.sizes()[0] > 0)
-        {
-            keep[count] = (indexes[0].item().toInt());
-            count += 1;
-
-            // Computing overlaps
-            torch::Tensor lefts = torch::empty(indexes.sizes()[0] - 1);
-            torch::Tensor tops = torch::empty(indexes.sizes()[0] - 1);
-            torch::Tensor rights = torch::empty(indexes.sizes()[0] - 1);
-            torch::Tensor bottoms = torch::empty(indexes.sizes()[0] - 1);
-            torch::Tensor widths = torch::empty(indexes.sizes()[0] - 1);
-            torch::Tensor heights = torch::empty(indexes.sizes()[0] - 1);
-            for (size_t i=0; i<indexes.sizes()[0] - 1; ++i)
-            {
-                lefts[i] = std::max(dets[indexes[0]][0].item().toFloat(), dets[indexes[i + 1]][0].item().toFloat());
-                tops[i] = std::max(dets[indexes[0]][1].item().toFloat(), dets[indexes[i + 1]][1].item().toFloat());
-                rights[i] = std::min(dets[indexes[0]][2].item().toFloat(), dets[indexes[i + 1]][2].item().toFloat());
-                bottoms[i] = std::min(dets[indexes[0]][3].item().toFloat(), dets[indexes[i + 1]][3].item().toFloat());
-                widths[i] = std::max(float(0), rights[i].item().toFloat() - lefts[i].item().toFloat());
-                heights[i] = std::max(float(0), bottoms[i].item().toFloat() - tops[i].item().toFloat());
-            }
-            torch::Tensor overlaps = widths * heights;
-
-            // FIlter by IOUs
-            torch::Tensor ious = overlaps / (areas.select(0, indexes[0].item().toInt()) + torch::index_select(areas, 0, indexes.slice(0, 1, indexes.sizes()[0])) - overlaps);
-            indexes = torch::index_select(indexes, 0, torch::nonzero(ious <= iou_thresh).select(1, 0) + 1);
-        }
-        keep = keep.toType(torch::kInt64);
-        output.push_back(torch::index_select(dets, 0, keep.slice(0, 0, count)));
+        cout<< "pred="<< pred << endl;
+    	output.push_back(pred);
     }
+        //until here it's right. 
+
+    //     if (pred.sizes()[0] == 0) continue;
+
+    //     // (center_x, center_y, w, h) to (left, top, right, bottom)
+    //     pred.select(1, 0) = pred.select(1, 0) - pred.select(1, 2) / 2;
+    //     pred.select(1, 1) = pred.select(1, 1) - pred.select(1, 3) / 2;
+    //     pred.select(1, 2) = pred.select(1, 0) + pred.select(1, 2);
+    //     pred.select(1, 3) = pred.select(1, 1) + pred.select(1, 3);
+
+    //     // Computing scores and classes
+    //     std::tuple<torch::Tensor, torch::Tensor> max_tuple = torch::max(pred.slice(1, 5, pred.sizes()[1]), 1);
+    //     pred.select(1, 4) = pred.select(1, 4) * std::get<0>(max_tuple);
+    //     pred.select(1, 5) = std::get<1>(max_tuple);
+
+    //     torch::Tensor  dets = pred.slice(1, 0, 6);
+
+    //     torch::Tensor keep = torch::empty({dets.sizes()[0]});
+    //     torch::Tensor areas = (dets.select(1, 3) - dets.select(1, 1)) * (dets.select(1, 2) - dets.select(1, 0));
+    //     std::tuple<torch::Tensor, torch::Tensor> indexes_tuple = torch::sort(dets.select(1, 4), 0, 1);
+    //     torch::Tensor v = std::get<0>(indexes_tuple);
+    //     torch::Tensor indexes = std::get<1>(indexes_tuple);
+    //     cout << "v=" << v <<endl;
+    //     cout << "indexes" << indexes<<endl;
+    //     int count = 0;
+    //     while (indexes.sizes()[0] > 0)
+    //     {
+    //         keep[count] = (indexes[0].item().toInt());
+    //         count += 1;
+
+    //         // Computing overlaps
+    //         torch::Tensor lefts = torch::empty(indexes.sizes()[0] - 1);
+    //         torch::Tensor tops = torch::empty(indexes.sizes()[0] - 1);
+    //         torch::Tensor rights = torch::empty(indexes.sizes()[0] - 1);
+    //         torch::Tensor bottoms = torch::empty(indexes.sizes()[0] - 1);
+    //         torch::Tensor widths = torch::empty(indexes.sizes()[0] - 1);
+    //         torch::Tensor heights = torch::empty(indexes.sizes()[0] - 1);
+    //         for (size_t i=0; i<indexes.sizes()[0] - 1; ++i)
+    //         {
+    //             lefts[i] = std::max(dets[indexes[0]][0].item().toFloat(), dets[indexes[i + 1]][0].item().toFloat());
+    //             tops[i] = std::max(dets[indexes[0]][1].item().toFloat(), dets[indexes[i + 1]][1].item().toFloat());
+    //             rights[i] = std::min(dets[indexes[0]][2].item().toFloat(), dets[indexes[i + 1]][2].item().toFloat());
+    //             bottoms[i] = std::min(dets[indexes[0]][3].item().toFloat(), dets[indexes[i + 1]][3].item().toFloat());
+    //             widths[i] = std::max(float(0), rights[i].item().toFloat() - lefts[i].item().toFloat());
+    //             heights[i] = std::max(float(0), bottoms[i].item().toFloat() - tops[i].item().toFloat());
+    //         }
+    //         torch::Tensor overlaps = widths * heights;
+
+    //         // FIlter by IOUs
+    //         torch::Tensor ious = overlaps / (areas.select(0, indexes[0].item().toInt()) + torch::index_select(areas, 0, indexes.slice(0, 1, indexes.sizes()[0])) - overlaps);
+    //         indexes = torch::index_select(indexes, 0, torch::nonzero(ious <= iou_thresh).select(1, 0) + 1);
+    //     }
+    //     keep = keep.toType(torch::kInt64);
+    //     output.push_back(torch::index_select(dets, 0, keep.slice(0, 0, count)));
+    //     cout << "keep="<< keep <<endl;
+    //     cout << "count=" << count <<endl;
+    //     cout << "output="<< output<< endl;;
+    // }
+
     return output;
 }
 
