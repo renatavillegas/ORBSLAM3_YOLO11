@@ -76,9 +76,9 @@ void YoloDetect::LoadClassNames()
     				cv::Mat objectMask = cv::Mat::zeros(mImage.size(), CV_8UC1) * 255;
 
 		            left = dets[0][i][0].item().toFloat() * mImage.cols / 640;
-		            top = dets[0][i][1].item().toFloat() * mImage.rows / 384;
+		            top = dets[0][i][1].item().toFloat() * mImage.rows / 640;
 		            right = dets[0][i][2].item().toFloat() * mImage.cols / 640;
-		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 384;
+		            bottom = dets[0][i][3].item().toFloat() * mImage.rows / 640;
 		            index = dets[0][i][5].item().toInt();
 		            classID = mClassnames[index];
 	                left = std::max(0, left);
