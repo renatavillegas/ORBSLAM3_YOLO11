@@ -322,7 +322,7 @@ void Viewer::Run()
             for (const auto& object : objects)
             {
                 mpMapDrawer->DrawObjectMapPoints(object);
-            }            
+            }
         }
 
 

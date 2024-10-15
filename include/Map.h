@@ -89,6 +89,7 @@ public:
     void AddObjectMapPoint(MapPoint *pMP);
     void EraseObjectMapPoints();
     std::vector<MapPoint*> GetAllObjectMapPoints();
+    void AddObjectMapPoint(MapPoint *pMP, int objIndex);
 
     long unsigned int MapPointsInMap();
     long unsigned  KeyFramesInMap();
@@ -166,8 +167,11 @@ protected:
 
     std::set<MapPoint*> mspMapPoints;
     std::set<KeyFrame*> mspKeyFrames;
-    //yolo object mapPoints 
+    //yolo object mapPoints. Here I need a vector of it, because I want to keep the information 
+    //about which map point is related to each object. This can be used to keep the track. 
+
     std::set<MapPoint*> mspObjectMapPoints;
+    std::vector<std::set<MapPoint*>> mvpObjectMapPoints;
 
     // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
     std::vector<MapPoint*> mvpBackupMapPoints;

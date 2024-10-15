@@ -497,6 +497,13 @@ void Map::AddObjectMapPoint(MapPoint *pMP)
     unique_lock<mutex> lock(mMutexMap);
     mspObjectMapPoints.insert(pMP);
 }
+
+void Map::AddObjectMapPoint(MapPoint *pMP, int objIndex)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mvpObjectMapPoints[objIndex].insert(pMP);
+}
+
 void Map::EraseObjectMapPoints()
 {
     unique_lock<mutex> lock(mMutexMap);

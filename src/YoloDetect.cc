@@ -60,7 +60,7 @@ void YoloDetect::LoadClassNames()
 	    imgTensor = imgTensor.div(255);
 	    imgTensor = imgTensor.unsqueeze(0);	
 	    torch::Tensor preds =  mModule.forward({imgTensor}).toTensor().cpu();
-    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.5, 0.9);
+    	std::vector<torch::Tensor> dets = YoloDetect::non_max_suppression(preds, 0.3, 0.9);
     	//cout << "preds = " << preds <<endl;
     	if (dets.size() > 0)
     	{
@@ -102,7 +102,6 @@ void YoloDetect::LoadClassNames()
 		        	AddNewObject(x,y,l,h, classID, objectMask);
 
 		        }
-		        cv::waitKey(10);
     		}
 	    }
 		return;
@@ -142,19 +141,18 @@ vector<torch::Tensor> YoloDetect::non_max_suppression(torch::Tensor preds, float
         // Filter by scores
         torch::Tensor scores = pred.select(1, 4);
         pred = torch::index_select(pred, 0, torch::nonzero(scores > score_thresh).select(1, 0));
-        cout<< "pred="<< pred << endl;
-    	output.push_back(pred);
-    }
         //until here it's right. 
 
     //     if (pred.sizes()[0] == 0) continue;
 
-    //     // (center_x, center_y, w, h) to (left, top, right, bottom)
-    //     pred.select(1, 0) = pred.select(1, 0) - pred.select(1, 2) / 2;
-    //     pred.select(1, 1) = pred.select(1, 1) - pred.select(1, 3) / 2;
-    //     pred.select(1, 2) = pred.select(1, 0) + pred.select(1, 2);
-    //     pred.select(1, 3) = pred.select(1, 1) + pred.select(1, 3);
-
+         // (center_x, center_y, w, h) to (left, top, right, bottom)
+         pred.select(1, 0) = pred.select(1, 0) - pred.select(1, 2) / 2;
+         pred.select(1, 1) = pred.select(1, 1) - pred.select(1, 3) / 2;
+         pred.select(1, 2) = pred.select(1, 0) + pred.select(1, 2);
+         pred.select(1, 3) = pred.select(1, 1) + pred.select(1, 3);
+         cout<< "pred="<< pred << endl;
+		 output.push_back(pred);
+	}
     //     // Computing scores and classes
     //     std::tuple<torch::Tensor, torch::Tensor> max_tuple = torch::max(pred.slice(1, 5, pred.sizes()[1]), 1);
     //     pred.select(1, 4) = pred.select(1, 4) * std::get<0>(max_tuple);
