@@ -244,21 +244,61 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
         minPoint = minPoint.cwiseMin(point);
         maxPoint = maxPoint.cwiseMax(point);
     }
-    float padding = 0.1;
+    float padding = 0.001;
     Eigen::Vector3f minPadded = minPoint - Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f maxPadded = maxPoint + Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f center = (minPadded + maxPadded) / 2.0f;
     Eigen::Vector3f scale = (maxPadded - minPadded) / 2.0f;
+    // define each vertice
+    Eigen::Vector3f vertices[8];
+    vertices[0] = minPadded;
+    vertices[1] = Eigen::Vector3f(maxPadded.x(), minPadded.y(), minPadded.z());
+    vertices[2] = Eigen::Vector3f(maxPadded.x(), maxPadded.y(), minPadded.z());
+    vertices[3] = Eigen::Vector3f(minPadded.x(), maxPadded.y(), minPadded.z());
+    vertices[4] = Eigen::Vector3f(minPadded.x(), minPadded.y(), maxPadded.z());
+    vertices[5] = Eigen::Vector3f(maxPadded.x(), minPadded.y(), maxPadded.z());
+    vertices[6] = maxPadded;
+    vertices[7] = Eigen::Vector3f(minPadded.x(), maxPadded.y(), maxPadded.z());
+    //draw each line 
+    glBegin(GL_LINES);
+    //botton
+    glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
+    glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
+    glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
+    glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
+    glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
+    glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
+    glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
+    glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
+    //top 
+    glVertex3f(vertices[4].x(), vertices[4].y(), vertices[4].z());
+    glVertex3f(vertices[5].x(), vertices[5].y(), vertices[5].z());
+    glVertex3f(vertices[5].x(), vertices[5].y(), vertices[5].z());
+    glVertex3f(vertices[6].x(), vertices[6].y(), vertices[6].z());
+    glVertex3f(vertices[6].x(), vertices[6].y(), vertices[6].z());
+    glVertex3f(vertices[7].x(), vertices[7].y(), vertices[7].z());
+    glVertex3f(vertices[7].x(), vertices[7].y(), vertices[7].z());
+    glVertex3f(vertices[4].x(), vertices[4].y(), vertices[4].z());
+    //top to down 
+    glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
+    glVertex3f(vertices[4].x(), vertices[4].y(), vertices[4].z());
+    glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
+    glVertex3f(vertices[5].x(), vertices[5].y(), vertices[5].z());
+    glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
+    glVertex3f(vertices[6].x(), vertices[6].y(), vertices[6].z());
+    glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
+    glVertex3f(vertices[7].x(), vertices[7].y(), vertices[7].z());
     glPushMatrix();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glTranslatef(center[0], center[1], center[2]);
-    glScalef(scale[0], scale[1], scale[2]);
-    pangolin::glDrawColouredCube();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glTranslatef(center[0], center[1], center[2]);
+    //glScalef(scale[0], scale[1], scale[2]);
+    //pangolin::glDrawColouredCube();
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPopMatrix();
+    glEnd();
     InitializeGLUT();
     std::string text = "ClassID: " + classID;
-    RenderText(text, maxPadded[0] + 0.1, maxPadded[1]+0.1);
-    glPopMatrix();
+    RenderText(text, center[0], center[1]);
 }
 
 void MapDrawer::DrawRegion() {
@@ -647,6 +687,33 @@ void MapDrawer::DrawObjectMapPoints(const YoloDetect::Object& object)
     }
     glEnd();
     std::string classID = object.classID;
+    // Draw a cube around the valid points
+    DrawCubeAroundPoints(validPoints,classID);
+
+}
+
+void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
+{
+    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    if(!pActiveMap)
+        return;
+    std::vector<Eigen::Vector3f> validPoints;
+    // Define points
+    const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetObjectMapPoints(index);
+    glPointSize(5);
+    glBegin(GL_POINTS);
+    glColor3f(0.0, 1.0, 0.0);
+
+    // All map points
+    for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
+    {
+        if ((*i)->isBad())
+            continue;
+        Eigen::Matrix<float,3,1> pos = (*i)->GetWorldPos();
+        glVertex3f(pos(0), pos(1), pos(2));
+        validPoints.push_back(pos);
+    }
+    glEnd();
     // Draw a cube around the valid points
     DrawCubeAroundPoints(validPoints,classID);
 

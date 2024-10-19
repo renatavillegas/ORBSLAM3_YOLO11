@@ -89,6 +89,8 @@ public:
     void AddObjectMapPoint(MapPoint *pMP);
     void EraseObjectMapPoints();
     std::vector<MapPoint*> GetAllObjectMapPoints();
+    std::vector<MapPoint*> GetObjectMapPoints(int index);
+
     void AddObjectMapPoint(MapPoint *pMP, int objIndex);
 
     long unsigned int MapPointsInMap();
@@ -161,6 +163,8 @@ public:
     std::set<long unsigned int> msOptKFs;
     std::set<long unsigned int> msFixedKFs;
 
+    //yolo detect 
+    std::vector<std::set<MapPoint*>> mvpObjectMapPoints;
 protected:
 
     long unsigned int mnId;
@@ -171,7 +175,7 @@ protected:
     //about which map point is related to each object. This can be used to keep the track. 
 
     std::set<MapPoint*> mspObjectMapPoints;
-    std::vector<std::set<MapPoint*>> mvpObjectMapPoints;
+    
 
     // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
     std::vector<MapPoint*> mvpBackupMapPoints;

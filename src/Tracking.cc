@@ -2250,20 +2250,22 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
-        // Update drawer
-        mpFrameDrawer->Update(this);
         // Add the current map points in the vector
         if (!mvObjectIndexes.empty()) {
             pCurrentMap->EraseObjectMapPoints();
+            pCurrentMap->mvpObjectMapPoints.resize(mvObjectIndexes.size());
             for (int i = 0; i < mvObjectIndexes.size(); i++) {
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
                     int index = mvObjectIndexes[i][j]; 
                     if (mCurrentFrame.mvpMapPoints[index]) {
-                        pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index]);
+                        pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);
                     }
                 }
             }
         }
+
+        // Update drawer
+        mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 

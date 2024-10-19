@@ -319,9 +319,9 @@ void Viewer::Run()
         if (!objects.empty())
         {
             // Iterate over each object and draw it
-            for (const auto& object : objects)
+            for (int i = 0; i < objects.size(); i++)
             {
-                mpMapDrawer->DrawObjectMapPoints(object);
+                mpMapDrawer->DrawObjectMapPoints(i, objects[i].classID);
             }
         }
 

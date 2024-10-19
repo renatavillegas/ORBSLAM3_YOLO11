@@ -516,5 +516,13 @@ std::vector<MapPoint*> Map::GetAllObjectMapPoints()
     return vector<MapPoint*>(mspObjectMapPoints.begin(),mspObjectMapPoints.end());
 }
 
+std::vector<MapPoint*> Map::GetObjectMapPoints(int index)
+{
+    unique_lock<mutex> lock(mMutexMap);
+    if(index<0||index>=mvpObjectMapPoints.size())
+        return vector<MapPoint*>();
+    return vector<MapPoint*>(mvpObjectMapPoints[index].begin(),mvpObjectMapPoints[index].end());
+
+}
 
 } //namespace ORB_SLAM3

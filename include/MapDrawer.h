@@ -55,6 +55,7 @@ public:
     void DrawRegion();
     void DrawObject(const YoloDetect::Object& object);
     void DrawObjectMapPoints(const YoloDetect::Object& object);
+    void DrawObjectMapPoints(int index, std::string classID);
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);
