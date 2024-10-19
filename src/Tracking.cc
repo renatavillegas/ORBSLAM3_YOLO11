@@ -1466,9 +1466,10 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     mImRight = imRectRight;
 
      // Yolo
-    cv::Mat InputImage;
-    InputImage = imRectLeft.clone();
-    mpYoloDetect->GetImage(InputImage);
+    cv::Mat InputImageLeft, InputImageRight;
+    InputImageLeft = imRectLeft.clone();
+    InputImageRight = imRectRight.clone();
+    mpYoloDetect->GetImage(InputImageLeft, InputImageRight);
     mpYoloDetect->Detect();
 
     if(mImGray.channels()==3)
@@ -1613,12 +1614,12 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
 {
     mImGray = im;
-    // Yolo
-    cv::Mat InputImage;
-    InputImage = im.clone();
-    mpYoloDetect->GetImage(InputImage);
-    mpYoloDetect->Detect();
-    std::vector<YoloDetect::Object> detectedObjects = mpYoloDetect->GetObjects();
+    // Yolo - Support only stereo for now.
+    // cv::Mat InputImage;
+    // InputImage = im.clone();
+    // mpYoloDetect->GetImage(InputImage);
+    // mpYoloDetect->Detect();
+    // std::vector<YoloDetect::Object> detectedObjects = mpYoloDetect->GetObjects();
 
     if(mImGray.channels()==3)
     {
@@ -2257,7 +2258,7 @@ void Tracking::Track()
             for (int i = 0; i < mvObjectIndexes.size(); i++) {
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
                     int index = mvObjectIndexes[i][j]; 
-                    if (mCurrentFrame.mvpMapPoints[index]) {
+                    if (mCurrentFrame.mvpMapPoints[index] && mCurrentFrame.mvpMapPoints[index]->GetWorldPos().y() <=2.5) {
                         pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);
                     }
                 }

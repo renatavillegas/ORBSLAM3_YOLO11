@@ -244,7 +244,7 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
         minPoint = minPoint.cwiseMin(point);
         maxPoint = maxPoint.cwiseMax(point);
     }
-    float padding = 0.001;
+    float padding = 0.0;
     Eigen::Vector3f minPadded = minPoint - Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f maxPadded = maxPoint + Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f center = (minPadded + maxPadded) / 2.0f;
