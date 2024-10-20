@@ -244,6 +244,7 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
         minPoint = minPoint.cwiseMin(point);
         maxPoint = maxPoint.cwiseMax(point);
     }
+    cout << "minPoint= " << minPoint << " maxPoint="<< maxPoint <<endl;
     float padding = 0.0;
     Eigen::Vector3f minPadded = minPoint - Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f maxPadded = maxPoint + Eigen::Vector3f(padding, padding, padding);
@@ -261,34 +262,43 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     vertices[7] = Eigen::Vector3f(minPadded.x(), maxPadded.y(), maxPadded.z());
     //draw each line 
     glBegin(GL_LINES);
+    glPushMatrix();
     //botton
     glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
     glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
+
     glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
     glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
+
     glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
     glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
+
     glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
     glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
     //top 
     glVertex3f(vertices[4].x(), vertices[4].y(), vertices[4].z());
     glVertex3f(vertices[5].x(), vertices[5].y(), vertices[5].z());
+
     glVertex3f(vertices[5].x(), vertices[5].y(), vertices[5].z());
     glVertex3f(vertices[6].x(), vertices[6].y(), vertices[6].z());
+
     glVertex3f(vertices[6].x(), vertices[6].y(), vertices[6].z());
     glVertex3f(vertices[7].x(), vertices[7].y(), vertices[7].z());
+
     glVertex3f(vertices[7].x(), vertices[7].y(), vertices[7].z());
     glVertex3f(vertices[4].x(), vertices[4].y(), vertices[4].z());
     //top to down 
     glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
     glVertex3f(vertices[4].x(), vertices[4].y(), vertices[4].z());
+
     glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
     glVertex3f(vertices[5].x(), vertices[5].y(), vertices[5].z());
+
     glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
     glVertex3f(vertices[6].x(), vertices[6].y(), vertices[6].z());
+
     glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
     glVertex3f(vertices[7].x(), vertices[7].y(), vertices[7].z());
-    glPushMatrix();
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     //glTranslatef(center[0], center[1], center[2]);
     //glScalef(scale[0], scale[1], scale[2]);

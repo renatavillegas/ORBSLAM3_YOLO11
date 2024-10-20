@@ -30,7 +30,7 @@ void YoloDetect::LoadClassNames()
     	}
 	}
 	//Just for test
-	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID, cv::Mat objectMask, float depth)
+	void YoloDetect::AddNewObject(int area_x, int area_y, int area_width, int area_height, std::string classID, cv::Mat objectMask, std::pair<float, float> depthMinMax)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
@@ -39,21 +39,30 @@ void YoloDetect::LoadClassNames()
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		newObject.objectMask = objectMask;
-		newObject.object_depth = depth;
+		newObject.depthMinMax = depthMinMax;
 		mObjects.push_back(newObject);			
 	}
 	void YoloDetect::ClearObjects()
 	{
 		mObjects.clear();
 	}
-	float YoloDetect::CalculateDepth(int xLeft, int xRight, float bf)
+	std::pair<float, float> YoloDetect::CalculateDepth(cv::Rect boudingboxLeft, cv::Rect boudingboxRight, float bf)
 	{
-		int disparity = xLeft - xRight;
-		if (disparity <= 0){
+		//calulate disparity min and max
+		int minXLeft, maxXLeft, minXRight, maxXRight;
+		minXLeft = boudingboxLeft.x; 
+		maxXLeft = boudingboxLeft.x + boudingboxLeft.width;
+		minXRight = boudingboxRight.x;
+		maxXRight = boudingboxRight.x + boudingboxRight.width;
+
+		float disparityMin = static_cast<float>(minXLeft - minXRight);
+		float disparityMax = static_cast<float>(maxXLeft - maxXRight);
+		
+		if ((disparityMin <= 0)||disparityMax <=0){
 			 std::cerr << "Disparity must be greater than 0!" << std::endl;
-			 return -1.0f;
+			 return std::make_pair(-1,-1);
 		}
-		return bf / disparity;
+		return std::make_pair(bf/disparityMax, bf/disparityMin);
 
 	}
 	void YoloDetect::Detect()
@@ -97,6 +106,7 @@ void YoloDetect::LoadClassNames()
 	    		std::string classID_right = "";
 	    		//store the center of the bounding box from the left and right images. 
 	    		std::vector<cv::Point2f> centersLeft, centersRight;
+	    		cv::Rect leftBox, rightBox;
 		        // Image Left Processing
 		        for (size_t i=0; i < detsLeft[0].sizes()[0]; ++ i)
 		        {
@@ -146,11 +156,10 @@ void YoloDetect::LoadClassNames()
 				    if(bestMatchIndex!= -1)
 				    {
 				    	//calculate depth
-				    	float bf = 33.4058028773226;
-				    	int xLeft = detsLeft[0][i][0].item().toFloat();
-				    	int xRight = detsRight[0][bestMatchIndex][0].item().toFloat();
-				    	float depth = CalculateDepth(xLeft, xRight, bf);
-				    	cout << "depth=" <<depth<< endl;
+				    	//float bf =110.28759238794;
+				    	float bf =33.4058028773226;
+				    	std::pair<float, float> depth = CalculateDepth(leftBox, rightBox, bf);
+				    	cout << "depth=" <<depth.first << ", " <<depth.second << endl;
 				    	objectMask(leftBox).setTo(cv::Scalar(1));
 				    	AddNewObject(imleft_left,imleft_top,l_left,h_left, classID_left, objectMask, depth);
 				    }

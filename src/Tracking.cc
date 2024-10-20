@@ -2251,15 +2251,36 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
-        // Add the current map points in the vector
+        // Add the object map points to the vector
         if (!mvObjectIndexes.empty()) {
             pCurrentMap->EraseObjectMapPoints();
             pCurrentMap->mvpObjectMapPoints.resize(mvObjectIndexes.size());
             for (int i = 0; i < mvObjectIndexes.size(); i++) {
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
                     int index = mvObjectIndexes[i][j]; 
-                    if (mCurrentFrame.mvpMapPoints[index] && mCurrentFrame.mvpMapPoints[index]->GetWorldPos().y() <=2.5) {
-                        pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);
+                    //check max and min depths
+                    if (mCurrentFrame.mvpMapPoints[index]) {
+                        float mindepth = mpObjects[i].depthMinMax.first;
+                        float maxdepth = mpObjects[i].depthMinMax.second;
+                        if(mindepth==-1 ||maxdepth==-1)
+                        {
+                            cout<< "could not calculate depth for this object"<< endl;
+                            continue;
+                        }
+                        //here we need the position relative to the camera! 
+                        //Get the camera position
+                        Sophus::SE3<float>  Tcw = mCurrentFrame.GetPose();
+                        //Get mapPoint world position 
+                        Eigen::Vector3f pos = mCurrentFrame.mvpMapPoints[index]->GetWorldPos();
+                        //set the rotation and translation matrix 
+                        Sophus::Matrix3<float> Rot_cam_world = Tcw.rotationMatrix();
+                        Sophus::SE3<float>::TranslationMember T_cam_world = Tcw.translation();
+                        //calculate position related to the camera
+                        Eigen::Vector3f pc = Rot_cam_world * pos + T_cam_world;
+                        if(pc.z()<=maxdepth && pc.z()>= mindepth){
+                            cout <<"pos= "<<pc.x()<<", "<< pc.y() << ", "<< pc.z()<< endl;
+                            pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);
+                        }
                     }
                 }
             }

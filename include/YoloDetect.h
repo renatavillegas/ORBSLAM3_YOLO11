@@ -19,7 +19,7 @@ public:
 		std::string classID; 
 		std::vector<cv::KeyPoint> keyPoints;
 		std::vector<MapPoint*> mapPoints;
-		float object_depth;
+		std::pair<float, float> depthMinMax;
 	} Object;	
 	//Constructor 
 	YoloDetect();
@@ -37,10 +37,10 @@ public:
 	vector<torch::Tensor> non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
 	//thread function 
 	void Run();
-	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID, cv::Mat objectImage, float object_depth);
+	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID, cv::Mat objectImage, std::pair<float, float> object_depth);
 	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
 	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
-	float CalculateDepth(int xLeft, int xRight, float bf);
+	std::pair<float, float> CalculateDepth(cv::Rect xLeft, cv::Rect xRight, float bf);
 	std::vector<Object> GetObjects();
 	void ClearObjects();
 	bool newObjct;
