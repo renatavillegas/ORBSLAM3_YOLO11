@@ -241,6 +241,7 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     minPoint = points[0];
     maxPoint = points[0];
     for (const auto& point : points) {
+        cout <<"pos= "<<point.x()<<", "<< point.y() << ", "<< point.z()<< endl;
         minPoint = minPoint.cwiseMin(point);
         maxPoint = maxPoint.cwiseMax(point);
     }
@@ -261,8 +262,8 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     vertices[6] = maxPadded;
     vertices[7] = Eigen::Vector3f(minPadded.x(), maxPadded.y(), maxPadded.z());
     //draw each line 
-    glBegin(GL_LINES);
     glPushMatrix();
+    glBegin(GL_LINES);
     //botton
     glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
     glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
@@ -304,8 +305,8 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     //glScalef(scale[0], scale[1], scale[2]);
     //pangolin::glDrawColouredCube();
     //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glPopMatrix();
     glEnd();
+    glPopMatrix();
     InitializeGLUT();
     std::string text = "ClassID: " + classID;
     RenderText(text, center[0], center[1]);
@@ -685,8 +686,7 @@ void MapDrawer::DrawObjectMapPoints(const YoloDetect::Object& object)
     glPointSize(5);
     glBegin(GL_POINTS);
     glColor3f(0.0, 1.0, 0.0);
-
-    // All map points
+   // All map points
     for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
     {
         if ((*i)->isBad())
@@ -713,7 +713,6 @@ void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
     glPointSize(5);
     glBegin(GL_POINTS);
     glColor3f(0.0, 1.0, 0.0);
-
     // All map points
     for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
     {

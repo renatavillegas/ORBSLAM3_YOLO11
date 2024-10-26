@@ -2273,10 +2273,10 @@ void Tracking::Track()
                         //Get mapPoint world position 
                         Eigen::Vector3f pos = mCurrentFrame.mvpMapPoints[index]->GetWorldPos();
                         //set the rotation and translation matrix 
-                        Sophus::Matrix3<float> Rot_cam_world = Tcw.rotationMatrix();
+                        //Sophus::Matrix3<float> Rot_cam_world = Tcw.rotationMatrix();
                         Sophus::SE3<float>::TranslationMember T_cam_world = Tcw.translation();
                         //calculate position related to the camera
-                        Eigen::Vector3f pc = Rot_cam_world * pos + T_cam_world;
+                        Eigen::Vector3f pc = Tcw.inverse() * pos;
                         if(pc.z()<=maxdepth && pc.z()>= mindepth){
                             cout <<"pos= "<<pc.x()<<", "<< pc.y() << ", "<< pc.z()<< endl;
                             pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);

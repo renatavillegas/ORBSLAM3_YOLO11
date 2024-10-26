@@ -130,7 +130,7 @@ void YoloDetect::LoadClassNames()
 
 		        	float bestMatchScore = std::numeric_limits<float>::max();
 		        	int bestMatchIndex = -1;
-
+		        	centersRight.clear();
 		        	//check for correspondece on the right image
 				    for (size_t j = 0; j < detsRight[0].sizes()[0]; ++j)
 				    {
@@ -144,20 +144,19 @@ void YoloDetect::LoadClassNames()
 				        imright_bottom = std::min(mImageRight.rows, (int)detsRight[0][j][3].item().toFloat() * mImageRight.rows / 640);
 				        l_right= imright_right - imright_left;
 				        h_right= imright_bottom-imright_top;
-				        cv::Rect rightBox(imright_left, imright_top, l_right,h_right);
-				        centersRight.push_back(cv::Point2f((imright_left + imright_right) / 2.0, (imright_top + imright_bottom) / 2.0));
 				        float disparity = std::abs(imleft_left - imright_left);
 			            if (disparity > 0 && disparity < bestMatchScore)
 			            {
 			                bestMatchScore = disparity;
 			                bestMatchIndex = j;
+					        cv::Rect rightBox(imright_left, imright_top, l_right,h_right);
 			            }
 				    }
 				    if(bestMatchIndex!= -1)
 				    {
 				    	//calculate depth
-				    	//float bf =110.28759238794;
-				    	float bf =33.4058028773226;
+				    	float bf =110.28759238794;
+				    	//float bf =33.4058028773226;
 				    	std::pair<float, float> depth = CalculateDepth(leftBox, rightBox, bf);
 				    	cout << "depth=" <<depth.first << ", " <<depth.second << endl;
 				    	objectMask(leftBox).setTo(cv::Scalar(1));
