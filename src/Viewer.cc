@@ -321,7 +321,8 @@ void Viewer::Run()
             // Iterate over each object and draw it
             for (int i = 0; i < objects.size(); i++)
             {
-                mpMapDrawer->DrawObjectMapPoints(i, objects[i].classID);
+                //mpMapDrawer->DrawObjectMapPoints(i, objects[i].classID);
+                mpMapDrawer->DrawObject(objects[i]);
             }
         }
 
