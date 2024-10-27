@@ -155,8 +155,8 @@ void YoloDetect::LoadClassNames()
 				    if(bestMatchIndex!= -1)
 				    {
 				    	//calculate depth
-				    	float bf =110.28759238794;
-				    	//float bf =33.4058028773226;
+				    	//float bf =110.28759238794;
+				    	float bf =33.4058028773226;
 				    	std::pair<float, float> depth = CalculateDepth(leftBox, rightBox, bf);
 				    	cout << "depth=" <<depth.first << ", " <<depth.second << endl;
 				    	objectMask(leftBox).setTo(cv::Scalar(1));

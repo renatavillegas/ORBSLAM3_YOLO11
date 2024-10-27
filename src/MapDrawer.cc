@@ -245,13 +245,13 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
         minPoint = minPoint.cwiseMin(point);
         maxPoint = maxPoint.cwiseMax(point);
     }
-    cout << "minPoint= " << minPoint << " maxPoint="<< maxPoint <<endl;
+ //   cout << "minPoint= " << minPoint << " maxPoint="<< maxPoint <<endl;
     float padding = 0.0;
     Eigen::Vector3f minPadded = minPoint - Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f maxPadded = maxPoint + Eigen::Vector3f(padding, padding, padding);
     Eigen::Vector3f center = (minPadded + maxPadded) / 2.0f;
     Eigen::Vector3f scale = (maxPadded - minPadded) / 2.0f;
-    // define each vertice
+    // // define each vertice
     Eigen::Vector3f vertices[8];
     vertices[0] = minPadded;
     vertices[1] = Eigen::Vector3f(maxPadded.x(), minPadded.y(), minPadded.z());
@@ -309,7 +309,7 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     glPopMatrix();
     InitializeGLUT();
     std::string text = "ClassID: " + classID;
-    RenderText(text, center[0], center[1]);
+    RenderText(text, vertices[0].x(), vertices[0].y());
 }
 
 void MapDrawer::DrawRegion() {
@@ -321,9 +321,9 @@ void MapDrawer::DrawRegion() {
 
 void MapDrawer::DrawObject(const YoloDetect::Object& object) {
     // Vector to store valid points
-    std::vector<Eigen::Vector3f> validPoints;
-    glBegin(GL_POINTS);
-    glColor3f(1.0,0.0,0.0);
+    // std::vector<Eigen::Vector3f> validPoints;
+    // glBegin(GL_POINTS);
+    // glColor3f(1.0,0.0,0.0);
     // // Collect all valid points
     // for (const auto& mp : object.mapPoints)
     // {
@@ -381,7 +381,7 @@ void MapDrawer::DrawObject(const YoloDetect::Object& object) {
         Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2)  // Point 7
     };
 
-    glEnd();
+//    glEnd();
     std::string classID = object.classID;
     cout <<"Draw"<<endl;
     // Draw a cube around the valid points
