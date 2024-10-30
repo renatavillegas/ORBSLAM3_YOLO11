@@ -567,39 +567,41 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     cv::Mat _mDescriptors;
     cout<<"YoloDetect Frame!"<<endl;
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
+    bool hide = true;
     if (M<9000 && M!=0 && !mvObjectMasks.empty()){
         int num=0;
         for (int i =0; i< M; ++i){
             int x_r = floor(mvKeys[i].pt.x);
             int y_r = floor(mvKeys[i].pt.y);
-            bool insideMask = false;
+            bool hasOtherMask = true;
+            bool isPersonOnly=false;
             for (size_t maskIndex = 0; maskIndex < mvObjectMasks.size(); ++maskIndex) {
                 if ((int)mvObjectMasks[maskIndex].at<uchar>(y_r, x_r) >0) {
                     //keypoint inside the mask. If it's a person, we can ignore these points
                     //cout <<"classID="<<objectIds[maskIndex]<<endl;
                     if(objectIds[maskIndex] == "person")
                     {
-                        (*objectIndexes)[maskIndex].push_back(i);
-                        insideMask = true;
+                        isPersonOnly = true;
+                        hasOtherMask = false;
                         break;
                     } else {
-                        _mvKeys.push_back(mvKeys[i]);
-                        _mDescriptors.push_back(mDescriptors.row(i));
-                        (*objectIndexes)[maskIndex].push_back(i); 
-                        insideMask = true;
+                        (*objectIndexes)[maskIndex].push_back(i);
+                        hasOtherMask = true;
+                        isPersonOnly = false;
                         break;
                     }
                 }
             }
-            if (!insideMask) 
-            {
+            if (!isPersonOnly||hasOtherMask) {
                 _mvKeys.push_back(mvKeys[i]);
                 _mDescriptors.push_back(mDescriptors.row(i));
             }
         }
     }
-//    mvKeys = _mvKeys;
-//    mDescriptors =_mDescriptors;
+    if(hide){
+        mvKeys = _mvKeys;
+        mDescriptors =_mDescriptors;
+    }
 
     N = mvKeys.size();
     if(mvKeys.empty())

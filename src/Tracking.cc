@@ -2251,12 +2251,14 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
         // Add the object map points to the vector
-        // i is the number of objects and j is the index of the KeyPoint related to this object.
+        // i is the number of objects and j is the index of the KeyPoint/MapPoint related to this object.
         if (!mvObjectIndexes.empty()) {
             pCurrentMap->EraseObjectMapPoints();
             pCurrentMap->mvpObjectMapPoints.resize(mvObjectIndexes.size());
             for (int i = 0; i < mvObjectIndexes.size(); i++) {
-                bool has_mapPoint = false;
+                bool has_mapPoint = true;
+                if (mpObjects[i].classID=="person")
+                    continue;
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
                     int index = mvObjectIndexes[i][j]; 
                     //check max and min depths
@@ -2272,18 +2274,15 @@ void Tracking::Track()
                         //Get the camera position
                         Sophus::SE3<float>  Tcw = mCurrentFrame.GetPose();
                         //Get mapPoint world position 
-                        Eigen::Vector3f pos = mCurrentFrame.mvpMapPoints[index]->GetWorldPos();
-                        //set the rotation and translation matrix 
-                        //Sophus::Matrix3<float> Rot_cam_world = Tcw.rotationMatrix();
-                        //Sophus::SE3<float>::TranslationMember T_cam_world = Tcw.translation();
+                        Eigen::Vector3f pos_world = mCurrentFrame.mvpMapPoints[index]->GetWorldPos();
                         //calculate position related to the camera
-                        Eigen::Vector3f pc = Tcw.inverse() * pos;
-                        cout << "depthCurrentFrame" << mCurrentFrame.mvDepth[index] <<endl;
-                        if(pc.z()<=maxdepth && pc.z()>= mindepth){
-                            cout <<"pos= "<<pc.x()<<", "<< pc.y() << ", "<< pc.z()<< endl;
+                        Eigen::Vector3f pos_camera;
+                        pos_camera = Tcw * pos_world;
+                        //check if it's inside the estimated depth. 
+                        //if(pos_camera.z()<=maxdepth && pos_camera.z()>= mindepth){
                             pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);
                             has_mapPoint=true;
-                        }
+                        //}
                     }
                 }
                 if(!has_mapPoint) {

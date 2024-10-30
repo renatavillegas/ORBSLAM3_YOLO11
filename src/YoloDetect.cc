@@ -90,10 +90,10 @@ void YoloDetect::LoadClassNames()
 
 	    //dets on left side 
 	    torch::Tensor predsLeft =  mModule.forward({imgTensorLeft}).toTensor().cpu();
-    	std::vector<torch::Tensor> detsLeft = YoloDetect::non_max_suppression(predsLeft, 0.3, 0.3);
+    	std::vector<torch::Tensor> detsLeft = YoloDetect::non_max_suppression(predsLeft, 0.3, 0.7);
     	//dets on right side 
     	torch::Tensor predsRight = mModule.forward({ imgTensorRight }).toTensor().cpu();
-    	std::vector<torch::Tensor> detsRight = YoloDetect::non_max_suppression(predsRight, 0.3, 0.3);
+    	std::vector<torch::Tensor> detsRight = YoloDetect::non_max_suppression(predsRight, 0.3, 0.7);
     	//cout << "detsRight size, detsLeft size = " << detsRight.size() <<", " << detsLeft.size()<<endl;
     	if (!detsLeft.empty() && !detsRight.empty())
     	{

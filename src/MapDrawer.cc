@@ -241,7 +241,7 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     minPoint = points[0];
     maxPoint = points[0];
     for (const auto& point : points) {
-        cout <<"pos= "<<point.x()<<", "<< point.y() << ", "<< point.z()<< endl;
+        //cout <<"pos= "<<point.x()<<", "<< point.y() << ", "<< point.z()<< endl;
         minPoint = minPoint.cwiseMin(point);
         maxPoint = maxPoint.cwiseMax(point);
     }
@@ -321,71 +321,71 @@ void MapDrawer::DrawRegion() {
 
 void MapDrawer::DrawObject(const YoloDetect::Object& object) {
     // Vector to store valid points
-    // std::vector<Eigen::Vector3f> validPoints;
-    // glBegin(GL_POINTS);
-    // glColor3f(1.0,0.0,0.0);
-    // // Collect all valid points
-    // for (const auto& mp : object.mapPoints)
-    // {
-    //     // Ensure the map point is valid and not bad
-    //     if (mp && !mp->isBad())
-    //     {
-    //         Eigen::Vector3f pos = mp->GetWorldPos();
+    std::vector<Eigen::Vector3f> validPoints;
+    glBegin(GL_POINTS);
+    glColor3f(1.0,0.0,0.0);
+    // Collect all valid points
+    for (const auto& mp : object.mapPoints)
+    {
+        // Ensure the map point is valid and not bad
+        if (mp && !mp->isBad())
+        {
+            Eigen::Vector3f pos = mp->GetWorldPos();
             
-    //         // Ensure the position is finite
-    //         if (pos.array().isFinite().all())
-    //         {
-    //             validPoints.push_back(pos);
-    //             glVertex3f(pos(0),pos(1),pos(2));
-    //             //cout<<"Draw"<<endl;
-    //         }
-    //     }
-    // }
+            // Ensure the position is finite
+            if (pos.array().isFinite().all())
+            {
+                validPoints.push_back(pos);
+                glVertex3f(pos(0),pos(1),pos(2));
+                //cout<<"Draw"<<endl;
+            }
+        }
+    }
     // here we have the object area, the camera pose, the max and min deph
-    float depthMin = object.depthMinMax.first;
-    float depthMax = object.depthMinMax.second;
-    float depthAvg = (depthMin + depthMax) / 2.0f;
-    //float fx=477.22575539032283;
-    //float fy=477.22575539032283;
-    float fx=958.2243041992188;
-    float fy=958.2243041992188;
-    float cx=640.9063110351562;
-    float cy=350.24981689453125;
-    //float cx=270.5;
-    //float cy=270.5;
-    float scaleFactorX = depthAvg / fx;
-    float scaleFactorY = depthAvg / fy;
-    float cubeWidth = object.area.width * scaleFactorX;
-    float cubeHeight = object.area.height * scaleFactorY;
-    float cubeDepth = depthMax - depthMin;
-    float centerX = object.area.x + object.area.width / 2.0f;
-    float centerY = object.area.y + object.area.height / 2.0f;
-    Eigen::Vector3f centerCam(centerX * scaleFactorX, centerY * scaleFactorY, depthAvg);
-    //get the cube coordinates related to the world. 
-    // Calculate the 3D position of the cube center
-    float X = (centerX - cx) * depthAvg / fx;
-    float Y = (centerY - cy) * depthAvg / fy;
-    Eigen::Vector3f cubeCenter(X, Y, depthAvg);
-    Eigen::Vector4f centerCamHomog(centerCam(0), centerCam(1), centerCam(2), 1.0f);
-    Eigen::Vector4f centerWorldHomog = mCameraPose * centerCamHomog;
-    //Eigen::Vector3f centerWorld = centerWorldHomog.head<3>();
-    Eigen::Vector3f centerWorld = cubeCenter;
-    std::vector<Eigen::Vector3f> cubePoints = {
-        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 0
-        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 1
-        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 2
-        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 3
-        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 4
-        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 5
-        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 6
-        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2)  // Point 7
-    };
+//     float depthMin = object.depthMinMax.first;
+//     float depthMax = object.depthMinMax.second;
+//     float depthAvg = (depthMin + depthMax) / 2.0f;
+//     float fx=477.22575539032283;
+//     float fy=477.22575539032283;
+//     // float fx=958.2243041992188;
+//     // float fy=958.2243041992188;
+//     // float cx=640.9063110351562;
+//     // float cy=350.24981689453125;
+//     float cx=270.5;
+//     float cy=270.5;
+//     float scaleFactorX = depthAvg / fx;
+//     float scaleFactorY = depthAvg / fy;
+//     float cubeWidth = object.area.width * scaleFactorX;
+//     float cubeHeight = object.area.height * scaleFactorY;
+//     float cubeDepth = depthMax - depthMin;
+//     float centerX = object.area.x + object.area.width / 2.0f;
+//     float centerY = object.area.y + object.area.height / 2.0f;
+//     Eigen::Vector3f centerCam(centerX * scaleFactorX, centerY * scaleFactorY, depthAvg);
+//     //get the cube coordinates related to the world. 
+//     // Calculate the 3D position of the cube center
+//     float X = (centerX - cx) * depthAvg / fx;
+//     float Y = (centerY - cy) * depthAvg / fy;
+//     Eigen::Vector3f cubeCenter(X, Y, depthAvg);
+//     Eigen::Vector4f centerCamHomog(centerCam(0), centerCam(1), centerCam(2), 1.0f);
+//     Eigen::Vector4f centerWorldHomog = mCameraPose * centerCamHomog;
+//     //Eigen::Vector3f centerWorld = centerWorldHomog.head<3>();
+//     Eigen::Vector3f centerWorld = cubeCenter;
+//     std::vector<Eigen::Vector3f> cubePoints = {
+//         Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 0
+//         Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 1
+//         Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 2
+//         Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 3
+//         Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 4
+//         Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 5
+//         Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 6
+//         Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2)  // Point 7
+//     };
 
-//    glEnd();
-    std::string classID = object.classID;
-    cout <<"Draw"<<endl;
-    // Draw a cube around the valid points
-    DrawCubeAroundPoints(cubePoints,classID);
+// //    glEnd();
+     std::string classID = object.classID;
+//     //cout <<"Draw"<<endl;
+//     // Draw a cube around the valid points
+    DrawCubeAroundPoints(validPoints,classID);
 }
 
 void MapDrawer::DrawMapPoints()
