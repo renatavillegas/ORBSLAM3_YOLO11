@@ -14,7 +14,7 @@ namespace ORB_SLAM3
 void YoloDetect::LoadClassNames()
 	{
 		//load model 
-		mModule = torch::jit::load("yolov10n.torchscript");
+		mModule = torch::jit::load("yolo11n-seg.torchscript");
 		//load classes
 		std::ifstream f("/home/oficina-robotica/ORB_SLAM3_2/coco.names");
 	    if (!f.is_open())
@@ -75,98 +75,17 @@ void YoloDetect::LoadClassNames()
 	    cv::resize(mImageLeft, imgLeft, cv::Size(640, 640));
 	    cv::cvtColor(imgLeft, imgLeft, cv::COLOR_BGR2RGB);
 	    torch::Tensor imgTensorLeft = torch::from_blob(imgLeft.data, {imgLeft.rows, imgLeft.cols,3},torch::kByte);
-	    imgTensorLeft = imgTensorLeft.permute({2,0,1});
-	    imgTensorLeft = imgTensorLeft.toType(torch::kFloat);
-	    imgTensorLeft = imgTensorLeft.div(255);
+	    imgTensorLeft = imgTensorLeft.permute({2, 0, 1}); //channels, height, width
 	    imgTensorLeft = imgTensorLeft.unsqueeze(0);
-	    // Preparing input tensor right
-	    cv::resize(mImageRight, imgRight, cv::Size(640, 640));
-	    cv::cvtColor(imgRight, imgRight, cv::COLOR_BGR2RGB);
-	    torch::Tensor imgTensorRight = torch::from_blob(imgRight.data, {imgRight.rows, imgRight.cols, 3 }, torch::kByte);
-	    imgTensorRight = imgTensorRight.permute({ 2, 0, 1 });
-	    imgTensorRight = imgTensorRight.toType(torch::kFloat);
-	    imgTensorRight = imgTensorRight.div(255);
-	    imgTensorRight = imgTensorRight.unsqueeze(0);
-
-	    //dets on left side 
-	    torch::Tensor predsLeft =  mModule.forward({imgTensorLeft}).toTensor().cpu();
-    	std::vector<torch::Tensor> detsLeft = YoloDetect::non_max_suppression(predsLeft, 0.3, 0.7);
-    	//dets on right side 
-    	torch::Tensor predsRight = mModule.forward({ imgTensorRight }).toTensor().cpu();
-    	std::vector<torch::Tensor> detsRight = YoloDetect::non_max_suppression(predsRight, 0.3, 0.7);
-    	//cout << "detsRight size, detsLeft size = " << detsRight.size() <<", " << detsLeft.size()<<endl;
-    	if (!detsLeft.empty() && !detsRight.empty())
-    	{
-    		//cout << "dets.size()="<<dets.size()<< " dets[0].sizes()[0]="<<dets[0].sizes()[0] << endl; 
-    		if(detsLeft[0].sizes()[0]>mObjects.size())
-    		{
-	    		int x_left, y_left, l_left, h_left, imleft_left, imleft_top, imleft_bottom, imleft_right, imleft_index;
-	    		int x_right, y_right, l_right, h_right, imright_left, imright_top, imright_bottom, imright_right, imright_index;
-	    		std::string classID_left = "";
-	    		std::string classID_right = "";
-	    		//store the center of the bounding box from the left and right images. 
-	    		std::vector<cv::Point2f> centersLeft, centersRight;
-	    		cv::Rect leftBox, rightBox;
-		        // Image Left Processing
-		        for (size_t i=0; i < detsLeft[0].sizes()[0]; ++ i)
-		        {
-		        	//binary mask.
-    				cv::Mat objectMask = cv::Mat::zeros(mImageLeft.size(), CV_8UC1);
-		            imleft_left =  std::max(0, (int)detsLeft[0][i][0].item().toFloat() * mImageLeft.cols / 640);
-		            imleft_top = std::max(0, (int)detsLeft[0][i][1].item().toFloat() * mImageLeft.rows / 640);
-		            imleft_right = std::min(mImageLeft.cols, (int)detsLeft[0][i][2].item().toFloat() * mImageLeft.cols / 640);
-		            imleft_bottom = std::min(mImageLeft.rows, (int)detsLeft[0][i][3].item().toFloat() * mImageLeft.rows / 640);
-		            imleft_index = detsLeft[0][i][5].item().toInt();
-		            classID_left = mClassnames[imleft_index];
-			        l_left = imleft_right - imleft_left;
-			        h_left = imleft_bottom-imleft_top;       
-					cv::Rect leftBox(imleft_left, imleft_top, l_left, h_left);
-					centersLeft.push_back(cv::Point2f((imleft_left + imleft_right) / 2.0, (imleft_top + imleft_bottom) / 2.0));
-					cout<<"centersLeft="<< centersLeft[i]<< endl;
-					
-		           	//cout<<"Rec="<< objectROI<< endl << "image size = "<< mImageLeft.rows << "x" <<mImageLeft.cols <<endl;
-		            //cout << "x="<<x<<",y="<<y<<", l="<<l<<", h="<<h <<endl;
-		            //cout<<"classID="<<classID<<endl;
-
-		        	float bestMatchScore = std::numeric_limits<float>::max();
-		        	int bestMatchIndex = -1;
-		        	centersRight.clear();
-		        	//check for correspondece on the right image
-				    for (size_t j = 0; j < detsRight[0].sizes()[0]; ++j)
-				    {
-				        imright_index = detsRight[0][j][5].item().toInt();
-				        classID_right=mClassnames[imright_index];
-				        if(classID_left!=classID_right)
-				        	continue;
-				        imright_left = std::max(0,(int)detsRight[0][j][0].item().toFloat() * mImageRight.cols / 640);
-				        imright_top = std::max(0, (int)detsRight[0][j][1].item().toFloat() * mImageRight.rows / 640);
-				        imright_right = std::min(mImageRight.cols, (int)detsRight[0][j][2].item().toFloat() * mImageRight.cols / 640);
-				        imright_bottom = std::min(mImageRight.rows, (int)detsRight[0][j][3].item().toFloat() * mImageRight.rows / 640);
-				        l_right= imright_right - imright_left;
-				        h_right= imright_bottom-imright_top;
-				        float disparity = std::abs(imleft_left - imright_left);
-			            if (disparity > 0 && disparity < bestMatchScore)
-			            {
-			                bestMatchScore = disparity;
-			                bestMatchIndex = j;
-					        cv::Rect rightBox(imright_left, imright_top, l_right,h_right);
-			            }
-				    }
-				    if(bestMatchIndex!= -1)
-				    {
-				    	//calculate depth
-				    	//float bf =110.28759238794;
-				    	float bf =33.4058028773226;
-				    	std::pair<float, float> depth = CalculateDepth(leftBox, rightBox, bf);
-				    	cout << "depth=" <<depth.first << ", " <<depth.second << endl;
-				    	objectMask(leftBox).setTo(cv::Scalar(1));
-				    	AddNewObject(imleft_left,imleft_top,l_left,h_left, classID_left, objectMask, depth);
-				    }
-		        }
-    		}
-	    }
-		return;
+	    imgTensorLeft = imgTensorLeft.toType(torch::kFloat);
+	    imgTensorLeft = imgTensorLeft.div(255.0);
+	    //execute inference
+	    std::vector<torch::jit::IValue> inputs;
+	    inputs.push_back(imgTensorLeft);
+	    at::Tensor output = mModule.forward(inputs).toTuple()->elements()[0].toTensor();
+	    cout << "output = " << output;
 	}
+
 
 	std::vector<YoloDetect::Object> YoloDetect::GetObjects()
     {
