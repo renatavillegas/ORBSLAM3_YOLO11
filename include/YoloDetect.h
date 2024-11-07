@@ -35,6 +35,7 @@ public:
 	void LoadClassNames();
 
 	vector<torch::Tensor> non_max_suppression(torch::Tensor preds, float score_thresh, float iou_thresh);
+	vector<torch::Tensor> non_max_suppression_seg(torch::Tensor preds, float score_thresh, float iou_thresh);
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID, cv::Mat objectImage, std::pair<float, float> object_depth);

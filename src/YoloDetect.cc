@@ -81,9 +81,24 @@ void YoloDetect::LoadClassNames()
 	    imgTensorLeft = imgTensorLeft.div(255.0);
 	    //execute inference
 	    std::vector<torch::jit::IValue> inputs;
-	    inputs.push_back(imgTensorLeft);
-	    at::Tensor output = mModule.forward(inputs).toTuple()->elements()[0].toTensor();
-	    cout << "output = " << output;
+	    inputs.push_back(std::move(imgTensorLeft));
+	    torch::jit::IValue output = mModule.forward(inputs);
+	    //extract predictions
+	    auto preds = output.toTuple()->elements();
+	    cout << "preds.size=" <<preds.size()<< endl;
+
+		for (size_t i = 0; i < preds.size(); ++i) {
+		    torch::Tensor tensor = preds[i].toTensor();
+		    cout << "Tensor " << i << ": " << tensor.sizes() << std::endl;
+		}
+		torch::Tensor detections = preds[0].toTensor();
+		detections = detections.transpose(1, 2).contiguous();
+
+		vector<torch::Tensor> det = non_max_suppression_seg(detections, 0.5, 0.5);
+		cout << "det.size =" << det.size();
+	    // Prepare segmentation mask.
+	    //similar github https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/blob/7fd1386da091fd4c7382ef258c3ac8077af5bbb8/YoloV8DLLProject/dllmain.cpp#L381
+
 	}
 
 
@@ -189,6 +204,26 @@ vector<torch::Tensor> YoloDetect::non_max_suppression(torch::Tensor preds, float
     }
 
     return output;
+}
+
+vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, float score_thresh, float iou_thresh)
+{
+	std::vector<torch::Tensor> output;
+	for (size_t i = 0; i < preds.sizes()[0]; ++i) {
+		 torch::Tensor pred = preds.select(0, i);
+		 torch::Tensor scores = std::get<0>(torch::max(pred.slice(1, 4, 84), 1));
+		 auto mask = scores > score_thresh;
+		 if (mask.sum().item<int>() > 0) {
+		 	torch::Tensor indices = torch::nonzero(mask).select(1, 0);
+		 	pred = torch::index_select(pred, 0, indices);
+		 	output.push_back(pred);
+		 } else {
+		 	continue;
+		 }
+		 //pred = torch::index_select(pred, 0, torch::nonzero(scores > score_thresh).select(1, 0));
+		 //cout <<"scores="<< scores << endl;
+	}
+	return output;
 }
 
     void YoloDetect::GetImage(cv::Mat &imageLeft, cv::Mat &imageRight)
