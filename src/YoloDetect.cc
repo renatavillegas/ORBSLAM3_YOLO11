@@ -94,10 +94,43 @@ void YoloDetect::LoadClassNames()
 		torch::Tensor detections = preds[0].toTensor();
 		detections = detections.transpose(1, 2).contiguous();
 
-		vector<torch::Tensor> det = non_max_suppression_seg(detections, 0.5, 0.5);
-		cout << "det.size =" << det.size();
+		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.5, 0.5);
+		cout << "det.size =" << det_vector.size() << endl;
 	    // Prepare segmentation mask.
 	    //similar github https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/blob/7fd1386da091fd4c7382ef258c3ac8077af5bbb8/YoloV8DLLProject/dllmain.cpp#L381
+		if(det_vector.size()==0)
+			return;
+		//get the first tensor in the detection vector (we only have one image)
+		// Access the first tensor in the detections vector.
+ 		torch::Tensor det = det_vector[0];
+		int size = det.sizes()[0];
+		// Initialize an empty segmentation map with the original image dimensions.
+		int org_height = mImageLeft.rows; 
+		int org_width = mImageLeft.cols;
+		cv::Mat total_seg_map = cv::Mat(org_height, org_width, CV_8UC3, cv::Scalar(0, 0, 0));
+		for (int i = 0; i < size; i++) {
+		    // Scale bounding box coordinates from the network size to the original
+		    // image size.
+		    float left = det[i][0].item().toFloat() * org_width /
+		                 INPUT_W;  // Ensure left is within image bounds.
+		    left = std::max(0.0f, left);  // Ensure left is within image bounds.
+		    float top = det[i][1].item().toFloat() * org_height / INPUT_H;
+		    top = std::max(top, 0.0f);  // Ensure top is within image bounds.
+		    float right = det[i][2].item().toFloat() * org_width / INPUT_H;
+		    right = std::min(
+		        right,
+		        (float)(org_width - 1));  // Ensure right does not exceed image width.
+		    float bottom = det[i][3].item().toFloat() * org_height / INPUT_H;
+		    bottom = std::min(
+		        bottom, (float)(org_height -1));  // Ensure bottom does not exceed image height.
+		    float score =
+		        det[i][4].item().toFloat();  // Get the detection confidence score.
+		    int classID = det[i][37].item().toFloat(); // I'm saving the classID in the last element. 
+		    // Assign detection properties to the objects array.
+		    cv::Rect2i objectArea(left, top, right - left, bottom - top);
+		  	cout << "objectArea = " << objectArea<< endl;
+		  	cout << "classID=" << mClassnames[classID]<< endl;
+		}
 
 	}
 
@@ -233,7 +266,7 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 		    torch::Tensor dets;
 		    // Combine bounding box coordinates with confidence scores and class ids
 		    // into a single tensor.
-		    dets = torch::cat({pred.slice(1, 0, 5), pred.slice(1, 84, 116)}, 1);
+		    dets = torch::cat({pred.slice(1, 0, 5), pred.slice(1, 84, 116), predLoc.unsqueeze(1)}, 1);
 		    // Prepare tensors to keep track of indices of detections to retain.
 			torch::Tensor keep = torch::empty({dets.sizes()[0]}, torch::kInt64);
 		    torch::Tensor areas = (dets.select(1, 3) - dets.select(1, 1)) *
@@ -296,6 +329,7 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 			      indexes = torch::index_select(indexes, 0, torch::nonzero(ious <= iou_thresh).select(1, 0) + 1);
 		    }
 		    keep = keep.slice(0, 0, count);
+		    predLoc = torch::index_select(predLoc, 0, keep);
 		    cout << "count = " << count << endl;
 		    //select the keep detections to add to the output 
 		    output.push_back(torch::index_select(dets, 0, keep));
