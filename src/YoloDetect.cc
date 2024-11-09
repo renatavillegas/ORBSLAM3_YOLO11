@@ -216,12 +216,93 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 		 if (mask.sum().item<int>() > 0) {
 		 	torch::Tensor indices = torch::nonzero(mask).select(1, 0);
 		 	pred = torch::index_select(pred, 0, indices);
-		 	output.push_back(pred);
+		    // Convert bounding box format from center x, center y, width, height (cx,
+		    // cy, w, h) to top-left and bottom-right corners (x1, y1, x2, y2).
+		 	//pred boxes
+		    pred.select(1, 0) =
+		        pred.select(1, 0) - pred.select(1, 2) / 2;  // Calculate x1
+		    pred.select(1, 1) =
+		        pred.select(1, 1) - pred.select(1, 3) / 2;              // Calculate y1
+		    pred.select(1, 2) = pred.select(1, 0) + pred.select(1, 2);  // Calculate x2
+		    pred.select(1, 3) = pred.select(1, 1) + pred.select(1, 3);  // Calculate y2
+		    // Identify the maximum confidence score for each prediction and its
+		    // corresponding class.
+		    auto max_tuple = torch::max(pred.slice(1, 4, 84), 1);
+		    pred.select(1, 4) = std::get<0>(max_tuple);  // Set max confidence score
+			torch::Tensor predLoc = std::get<1>(max_tuple).to(pred.device());  // Store class id
+		    torch::Tensor dets;
+		    // Combine bounding box coordinates with confidence scores and class ids
+		    // into a single tensor.
+		    dets = torch::cat({pred.slice(1, 0, 5), pred.slice(1, 84, 116)}, 1);
+		    // Prepare tensors to keep track of indices of detections to retain.
+			torch::Tensor keep = torch::empty({dets.sizes()[0]}, torch::kInt64);
+		    torch::Tensor areas = (dets.select(1, 3) - dets.select(1, 1)) *
+                          		  (dets.select(1, 2) - dets.select(1, 0));
+		    // Sort detections by confidence score in descending order.
+		    auto indexes_tuple = torch::sort(dets.select(1, 4), 0,
+		                                     1);  // 0: first order, 1: decending order
+		    torch::Tensor v = std::get<0>(indexes_tuple);
+		    torch::Tensor indexes = std::get<1>(indexes_tuple);
+
+		    int count = 0;  // Counter for detections to keep.
+		    // Loop over detections and apply non-maximum suppression.
+		    while (indexes.sizes()[0] > 0) {
+		    	// Always keep the detection with the highest current score.
+			    keep[count++] = indexes[0].item<int64_t>();
+			    // Compute the pairwise overlap between the highest scoring detection and
+			      // all others. Preallocate tensors to hold the computed overlaps.
+			      torch::Tensor lefts =
+			          torch::empty(indexes.sizes()[0] - 1, indexes.options());
+			      torch::Tensor tops =
+			          torch::empty(indexes.sizes()[0] - 1, indexes.options());
+			      torch::Tensor rights =
+			          torch::empty(indexes.sizes()[0] - 1, indexes.options());
+			      torch::Tensor bottoms =
+			          torch::empty(indexes.sizes()[0] - 1, indexes.options());
+			      torch::Tensor widths =
+			          torch::empty(indexes.sizes()[0] - 1, indexes.options());
+			      torch::Tensor heights =
+			          torch::empty(indexes.sizes()[0] - 1, indexes.options());
+
+			      // Loop over each detection remaining after the one with the highest
+			      // score.
+			      for (size_t i = 0; i < indexes.sizes()[0] - 1; ++i) {
+			        // Compute the coordinates of the intersection rectangle.
+			      	lefts[i] = std::max(dets[indexes[0]][0].item().toFloat(),
+			                          dets[indexes[i + 1]][0].item().toFloat());
+			        tops[i] = std::max(dets[indexes[0]][1].item().toFloat(),
+			                           dets[indexes[i + 1]][1].item().toFloat());
+			        rights[i] = std::min(dets[indexes[0]][2].item().toFloat(),
+			                             dets[indexes[i + 1]][2].item().toFloat());
+			        bottoms[i] = std::min(dets[indexes[0]][3].item().toFloat(),
+			                              dets[indexes[i + 1]][3].item().toFloat());
+			        widths[i] = std::max(
+			            float(0), rights[i].item().toFloat() - lefts[i].item().toFloat());
+			        heights[i] = std::max(
+			            float(0), bottoms[i].item().toFloat() - tops[i].item().toFloat());
+			      }
+
+			      // Compute the intersection over union (IoU) for each pair.
+			      torch::Tensor overlaps = widths * heights;
+			      torch::Tensor ious =
+			          overlaps / (areas.select(0, indexes[0].item().toInt()) +
+			                      torch::index_select(
+			                          areas, 0, indexes.slice(0, 1, indexes.sizes()[0])) -
+			                      overlaps);
+			      auto nonzero_indices = torch::nonzero(ious <= iou_thresh);
+			      torch::Tensor kk = torch::nonzero(ious <= iou_thresh).select(1, 0) + 1;
+			      // Filter out detections with IoU above the threshold, as they overlap too
+			      // much with the highest scoring box.
+			      indexes = torch::index_select(indexes, 0, torch::nonzero(ious <= iou_thresh).select(1, 0) + 1);
+		    }
+		    keep = keep.slice(0, 0, count);
+		    cout << "count = " << count << endl;
+		    //select the keep detections to add to the output 
+		    output.push_back(torch::index_select(dets, 0, keep));
+		    cout << "output.size=" << output[0].sizes()<< endl;
 		 } else {
 		 	continue;
 		 }
-		 //pred = torch::index_select(pred, 0, torch::nonzero(scores > score_thresh).select(1, 0));
-		 //cout <<"scores="<< scores << endl;
 	}
 	return output;
 }
