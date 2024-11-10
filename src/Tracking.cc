@@ -1523,7 +1523,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //cout << "Incoming frame creation" << endl;
     //yolo Detect frame
     if (mSensor == System::STEREO && !mpCamera2 && !objectAreaMask.empty()){
-        //std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
+        std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
         //here we can pass an array of indexes arrays and an array of objectMasks. 
         //mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints, &mvobjectIndexes);
         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, objectAreaMask, &mvObjectIndexes, objectIds);
@@ -2260,75 +2260,12 @@ void Tracking::Track()
                 if (mpObjects[i].classID=="person")
                     continue;
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
-                    int index = mvObjectIndexes[i][j]; 
+                    int index = mvObjectIndexes[i][j];
+                    MapPoint* pMP = mCurrentFrame.mvpMapPoints[index];
                     //check max and min depths
-                    if (mCurrentFrame.mvpMapPoints[index]) {
-                        float mindepth = mpObjects[i].depthMinMax.first;
-                        float maxdepth = mpObjects[i].depthMinMax.second;
-                        if(mindepth==-1 ||maxdepth==-1)
-                        {
-                            cout<< "could not calculate depth for this object"<< endl;
-                            continue;
-                        }
-                        //here we need the position relative to the camera! 
-                        //Get the camera position
-                        Sophus::SE3<float>  Tcw = mCurrentFrame.GetPose();
-                        //Get mapPoint world position 
-                        Eigen::Vector3f pos_world = mCurrentFrame.mvpMapPoints[index]->GetWorldPos();
-                        //calculate position related to the camera
-                        Eigen::Vector3f pos_camera;
-                        pos_camera = Tcw * pos_world;
-                        //check if it's inside the estimated depth. 
-                        //if(pos_camera.z()<=maxdepth && pos_camera.z()>= mindepth){
-                            pCurrentMap->AddObjectMapPoint(mCurrentFrame.mvpMapPoints[index], i);
-                            has_mapPoint=true;
-                        //}
-                    }
-                }
-                if(!has_mapPoint) {
-                    cout <<"Object without mapPoints" <<endl;
-                    float mindepth = mpObjects[i].depthMinMax.first;
-                    float maxdepth = mpObjects[i].depthMinMax.second;
-                    float depthAvg = (mindepth + maxdepth) / 2.0f;
-                    //float fx=477.22575539032283;
-                    //float fy=477.22575539032283;
-                    //float fx=958.2243041992188;
-                    //float fy=958.2243041992188;
-                    //float cx=640.9063110351562;
-                    //float cy=350.24981689453125;
-                    //float cx=270.5;
-                    //float cy=270.5;
-                    float scaleFactorX = depthAvg*mCurrentFrame.invfx;
-                    float scaleFactorY = depthAvg*mCurrentFrame.invfy;
-                    float cubeWidth = mpObjects[i].area.width * scaleFactorX;
-                    float cubeHeight = mpObjects[i].area.height * scaleFactorY;
-                    float cubeDepth = maxdepth - mindepth;
-                    float centerX = mpObjects[i].area.x + mpObjects[i].area.width / 2.0f;
-                    float centerY = mpObjects[i].area.y + mpObjects[i].area.height / 2.0f;
-                    Eigen::Vector3f centerCam(centerX * scaleFactorX, centerY * scaleFactorY, depthAvg);
-                    //cout << "depthAvg = " << depthAvg<< endl;
-                    //get the cube coordinates related to the world. 
-                    // Calculate the 3D position of the cube center
-                    float X = (centerX - mCurrentFrame.cx) * depthAvg*mCurrentFrame.invfx;
-                    float Y = (centerY - mCurrentFrame.cy) * depthAvg*mCurrentFrame.invfy;
-                    Eigen::Vector3f cubeCenter(X, Y, depthAvg);
-                    //Eigen::Vector4f centerCamHomog(centerCam(0), centerCam(1), centerCam(2), 1.0f);
-                    //Eigen::Vector4f centerWorldHomog =  mRwc * cubeCenterCam + mOw;
-                    //Eigen::Vector3f centerWorld = centerCamHomog.head<3>();
-                    Eigen::Vector3f centerWorld =  mCurrentFrame.GetRwc() * cubeCenter + mCurrentFrame.GetOw();
-                    std::vector<Eigen::Vector3f> cubePoints = {
-                        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 0
-                        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 1
-                        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 2
-                        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) - cubeDepth / 2), // Point 3
-                        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 4
-                        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) - cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 5
-                        Eigen::Vector3f(centerWorld(0) + cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2), // Point 6
-                        Eigen::Vector3f(centerWorld(0) - cubeWidth / 2, centerWorld(1) + cubeHeight / 2, centerWorld(2) + cubeDepth / 2)  // Point 7
-                    };
-                    for (const auto& vertex : cubePoints) {
-                        MapPoint* newMapPoint = new MapPoint(vertex, mpAtlas->GetCurrentMap(), &mCurrentFrame, i);
-                        pCurrentMap->AddObjectMapPoint(newMapPoint, i);
+                    if (pMP){
+                        if(!pMP->isBad())
+                            pCurrentMap->AddObjectMapPoint(pMP, i);
                     }
                 }
             }
