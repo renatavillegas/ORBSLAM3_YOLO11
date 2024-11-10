@@ -16,7 +16,7 @@ public:
 	typedef struct{
 		cv::Rect2i area;
 		cv::Mat objectMask;
-		std::string classID; 
+		std::string classID;
 		std::vector<cv::KeyPoint> keyPoints;
 		std::vector<MapPoint*> mapPoints;
 		std::pair<float, float> depthMinMax;
@@ -39,6 +39,8 @@ public:
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID, cv::Mat objectImage, std::pair<float, float> object_depth);
+	void AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap);
+
 	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
 	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
 	std::pair<float, float> CalculateDepth(cv::Rect xLeft, cv::Rect xRight, float bf);

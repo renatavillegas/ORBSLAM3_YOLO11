@@ -40,8 +40,20 @@ void YoloDetect::LoadClassNames()
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		newObject.objectMask = objectMask;
 		newObject.depthMinMax = depthMinMax;
-		mObjects.push_back(newObject);			
+		mObjects.push_back(newObject);
 	}
+	//With the segmentation map 
+	void YoloDetect::AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap)
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		Object newObject;
+		newObject.area =objectArea;
+		newObject.classID = classID;
+		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
+		newObject.objectMask = objectSegMap;
+		mObjects.push_back(newObject);
+	}
+
 	void YoloDetect::ClearObjects()
 	{
 		mObjects.clear();
@@ -93,10 +105,11 @@ void YoloDetect::LoadClassNames()
 		}
 		torch::Tensor detections = preds[0].toTensor();
 		detections = detections.transpose(1, 2).contiguous();
+		torch::Tensor seg_pred = preds[1].toTensor();
+		cout << "seg_pred.sizes" << seg_pred.sizes()<< endl;
 
 		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.5, 0.5);
 		cout << "det.size =" << det_vector.size() << endl;
-	    // Prepare segmentation mask.
 	    //similar github https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/blob/7fd1386da091fd4c7382ef258c3ac8077af5bbb8/YoloV8DLLProject/dllmain.cpp#L381
 		if(det_vector.size()==0)
 			return;
@@ -108,6 +121,7 @@ void YoloDetect::LoadClassNames()
 		int org_height = mImageLeft.rows; 
 		int org_width = mImageLeft.cols;
 		cv::Mat total_seg_map = cv::Mat(org_height, org_width, CV_8UC3, cv::Scalar(0, 0, 0));
+		torch::Tensor seg_rois;  // Tensor to hold segmentation regions of interest.
 		for (int i = 0; i < size; i++) {
 		    // Scale bounding box coordinates from the network size to the original
 		    // image size.
@@ -123,15 +137,31 @@ void YoloDetect::LoadClassNames()
 		    float bottom = det[i][3].item().toFloat() * org_height / INPUT_H;
 		    bottom = std::min(
 		        bottom, (float)(org_height -1));  // Ensure bottom does not exceed image height.
-		    float score =
-		        det[i][4].item().toFloat();  // Get the detection confidence score.
+		    float score =det[i][4].item().toFloat();  // Get the detection confidence score.
 		    int classID = det[i][37].item().toFloat(); // I'm saving the classID in the last element. 
 		    // Assign detection properties to the objects array.
 		    cv::Rect2i objectArea(left, top, right - left, bottom - top);
 		  	cout << "objectArea = " << objectArea<< endl;
 		  	cout << "classID=" << mClassnames[classID]<< endl;
+		  	seg_rois = det[i].slice(0, 5, det[i].sizes()[0]-1);  // Extract segmentation ROI.(the latest element is the classID)
+		  	seg_rois = seg_rois.view({1, 32});
+		  	seg_pred = seg_pred.to(torch::kCPU);
+		  	seg_pred = seg_pred.view({1, 32, -1});
+		  	auto final_seg = torch::matmul(seg_rois, seg_pred).view({1, 160, 160});
+		  	final_seg = final_seg.sigmoid();  // Apply sigmoid to get mask probabilities.
+		  	float _seg_thresh = 0.5f;
+		  	final_seg = ((final_seg > _seg_thresh) * 255).clamp(0, 255).to(torch::kCPU).to(torch::kU8);
+		  	// Convert probabilities to binary mask.
+		  	cv::Mat seg_map(160, 160, CV_8UC1,final_seg.data_ptr());
+		  	//back to the original size.
+		    cv::Mat object_seg_map;
+		    cv::resize(seg_map, object_seg_map, cv::Size(org_width, org_height),
+		               cv::INTER_LINEAR);  	
+		  	// cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
+		  	// cv::imshow("Segmentation Map", seg_map2);
+		  	// cv::waitKey(0);
+		  	AddNewObject(objectArea, mClassnames[classID],object_seg_map);
 		}
-
 	}
 
 
