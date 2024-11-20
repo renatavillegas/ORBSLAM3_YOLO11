@@ -404,19 +404,26 @@ void MapDrawer::DrawMapPoints()
 
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
-    glColor3f(0.0,0.0,0.0);
+    glColor3f(1.0,1.0,1.0);
     Eigen::Matrix<float,3,1> pos;
     for(size_t i=0, iend=vpMPs.size(); i<iend;i++)
     {
         if(vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
             continue;
         pos = vpMPs[i]->GetWorldPos();
+        if(vpMPs[i]->mclassID=="person")
+            glColor3f(1.0,0.0,0.0);
+        else if (vpMPs[i]->mclassID=="sofa"||vpMPs[i]->mclassID=="chair"){
+            glPointSize(mPointSize*10);
+            glColor3f(0.0,0.0,1.0);
+        }
+
         glVertex3f(pos(0),pos(1),pos(2));
     }
     glEnd();
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
-    glColor3f(1.0,0.0,0.0);
+    glColor3f(1.0,1.0,1.0);
     for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
     {
         if((*sit)->isBad())
@@ -725,7 +732,10 @@ void MapDrawer::DrawObjectMapPoints(const YoloDetect::Object& object)
     const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetAllObjectMapPoints();
     glPointSize(5);
     glBegin(GL_POINTS);
-    glColor3f(0.0, 1.0, 0.0);
+    // if(object.classID=='sofa')
+    //     glColor3f(1.0, 0.0, 0.0);
+    // else if(object.classID=='chair')
+    //     glColor3f(1.0, 0.0, 0.0);
    // All map points
     for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
     {
@@ -750,7 +760,8 @@ void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
     std::vector<Eigen::Vector3f> validPoints;
     // Define points
     const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetObjectMapPoints(index);
-    glPointSize(5);
+    cout << "object "<< index << "mapPoints size=" << vpObjectMPs.size() << endl;
+    glPointSize(10);
     glBegin(GL_POINTS);
     glColor3f(0.0, 1.0, 0.0);
     // All map points

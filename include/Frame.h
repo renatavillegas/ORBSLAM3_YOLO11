@@ -311,6 +311,7 @@ public:
 
     //yolo detected object mask.
     std::vector<cv::Mat>mvObjectMasks;
+    std::vector<std::string>mvKeyPointsIDS;
 private:
 
     // Undistort keypoints given OpenCV distortion parameters.

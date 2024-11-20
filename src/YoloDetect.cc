@@ -45,13 +45,15 @@ void YoloDetect::LoadClassNames()
 	//With the segmentation map 
 	void YoloDetect::AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap)
 	{
-		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
 		newObject.area =objectArea;
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		newObject.objectMask = objectSegMap;
-		mObjects.push_back(newObject);
+		{
+			std::unique_lock<std::mutex> lock(mMutex);
+			mObjects.push_back(newObject);
+		}
 	}
 
 	void YoloDetect::ClearObjects()
@@ -125,12 +127,11 @@ void YoloDetect::LoadClassNames()
 		for (int i = 0; i < size; i++) {
 		    // Scale bounding box coordinates from the network size to the original
 		    // image size.
-		    float left = det[i][0].item().toFloat() * org_width /
-		                 INPUT_W;  // Ensure left is within image bounds.
+		    float left = det[i][0].item().toFloat() * org_width / INPUT_W;  // Ensure left is within image bounds.
 		    left = std::max(0.0f, left);  // Ensure left is within image bounds.
 		    float top = det[i][1].item().toFloat() * org_height / INPUT_H;
 		    top = std::max(top, 0.0f);  // Ensure top is within image bounds.
-		    float right = det[i][2].item().toFloat() * org_width / INPUT_H;
+		    float right = det[i][2].item().toFloat() * org_width / INPUT_W;
 		    right = std::min(
 		        right,
 		        (float)(org_width - 1));  // Ensure right does not exceed image width.
@@ -149,17 +150,17 @@ void YoloDetect::LoadClassNames()
 		  	seg_pred = seg_pred.view({1, 32, -1});
 		  	auto final_seg = torch::matmul(seg_rois, seg_pred).view({1, 160, 160});
 		  	final_seg = final_seg.sigmoid();  // Apply sigmoid to get mask probabilities.
-		  	float _seg_thresh = 0.5f;
-		  	final_seg = ((final_seg > _seg_thresh) * 255).clamp(0, 255).to(torch::kCPU).to(torch::kU8);
+		  	float _seg_thresh = 0.97f;
+		  	final_seg = ((final_seg >= _seg_thresh) * 255).clamp(0, 255).to(torch::kCPU).to(torch::kU8);
 		  	// Convert probabilities to binary mask.
 		  	cv::Mat seg_map(160, 160, CV_8UC1,final_seg.data_ptr());
 		  	//back to the original size.
 		    cv::Mat object_seg_map;
 		    cv::resize(seg_map, object_seg_map, cv::Size(org_width, org_height),
 		               cv::INTER_LINEAR);  	
-		  	// cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
-		  	// cv::imshow("Segmentation Map", seg_map2);
-		  	// cv::waitKey(0);
+		  	//cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
+		  	//cv::imshow("Segmentation Map", object_seg_map);
+		  	//cv::waitKey(0);
 		  	AddNewObject(objectArea, mClassnames[classID],object_seg_map);
 		}
 	}
