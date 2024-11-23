@@ -1564,7 +1564,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     mpObjects.clear();
     mpYoloDetect->ClearObjects();
     //mCurrentFrame.mvpMapPoints.clear();
-    mvObjectIndexes.clear();        
+    mvObjectIndexes.clear();  
 
     return mCurrentFrame.GetPose();
 }
@@ -1574,7 +1574,11 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 {
     mImGray = imRGB;
     cv::Mat imDepth = imD;
-
+    cv::Mat InputImageRGBD;
+    InputImageRGBD = imRGB.clone();
+    mpYoloDetect->GetImage(InputImageRGBD);
+    mpYoloDetect->Detect();
+    cout << "mpYoloDetect->GetObjects().size="<<mpYoloDetect->GetObjects().size() <<endl;
     if(mImGray.channels()==3)
     {
         if(mbRGB)
@@ -1606,7 +1610,10 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
 #endif
 
     Track();
-
+    mpObjects.clear();
+    mpYoloDetect->ClearObjects();
+    //mCurrentFrame.mvpMapPoints.clear();
+    mvObjectIndexes.clear();
     return mCurrentFrame.GetPose();
 }
 
