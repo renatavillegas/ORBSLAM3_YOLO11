@@ -1597,8 +1597,30 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
         imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
 
-    if (mSensor == System::RGBD)
+    if(mSensor == System::RGBD && !mpYoloDetect->GetObjects().empty())
+    {
+        //add object areas to pass to frame!
+        std::vector<cv::Mat> objectAreaMask;
+        std::vector<cv::Rect2i> objectArea;
+        std::vector<string> objectIds;
+        mpObjects = mpYoloDetect->GetObjects();
+        for(int i = 0; i<mpObjects.size();i++)
+        {
+            mvObjectIndexes.resize(mpObjects.size());
+            objectAreaMask.push_back(mpObjects[i].objectMask);
+            objectArea.push_back(mpObjects[i].area);
+            objectIds.push_back(mpObjects[i].classID);
+            cout<<"New object Area:" << objectArea[i]<< endl;
+        }
+        cout << "Number of masks: " << objectAreaMask.size() << endl;
+        cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
+        cout << "Number of object IDs: " << objectIds.size() << endl;
+
+        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,objectAreaMask, &mvObjectIndexes, objectIds);
+    }
+    else if (mSensor == System::RGBD)
         mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+
     else if(mSensor == System::IMU_RGBD)
         mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
 

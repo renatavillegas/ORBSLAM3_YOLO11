@@ -287,6 +287,148 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     AssignFeaturesToGrid();
 }
 
+//yolo RGBD Frame 
+Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, std::vector<cv::Mat> objectMasks, std::vector<std::vector<int>> *objectIndexes, std::vector<string> objectIds, Frame* pPrevF, const IMU::Calib &ImuCalib)
+    :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+     mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
+     mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false),
+     mpCamera(pCamera),mvObjectMasks(objectMasks),mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
+{
+    // Frame ID
+    mnId=nNextId++;
+
+    // Scale Level Info
+    mnScaleLevels = mpORBextractorLeft->GetLevels();
+    mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+    mfLogScaleFactor = log(mfScaleFactor);
+    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+
+    // ORB extraction
+#ifdef REGISTER_TIMES
+    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
+#endif
+    ExtractORB(0,imGray,0,0);
+#ifdef REGISTER_TIMES
+    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
+
+    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
+#endif
+
+
+    N = mvKeys.size();
+
+    if(mvKeys.empty())
+        return;
+    int M = mvKeys.size();
+    std::vector<cv::KeyPoint> _mvKeys;
+    cv::Mat _mDescriptors;
+    cout<<"YoloDetect2 RGBD Frame!"<<endl;
+    for(int i =0; i<mvObjectMasks.size(); i++)
+        (*objectIndexes)[i].reserve(M);
+    //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
+    bool hide = true;
+    cout << "M="<< M<< endl;
+    if (M!=0 && !mvObjectMasks.empty()){
+        int num=0;
+        cout << "mvObjectMasks.size()=" << mvObjectMasks.size() <<endl;
+        for (int i =0; i< M; ++i){
+            int x_r = floor(mvKeys[i].pt.x);
+            int y_r = floor(mvKeys[i].pt.y);
+            bool hasOtherMask = true;
+            bool isPersonOnly=false;
+            for (size_t maskIndex = 0; maskIndex < mvObjectMasks.size(); ++maskIndex) {
+                if ((int)mvObjectMasks[maskIndex].at<uchar>(y_r, x_r) > 0) {
+                    //keypoint inside the mask. If it's a person, we can ignore these points
+                    //cout <<"classID="<<objectIds[maskIndex]<<endl;
+                    if(objectIds[maskIndex] == "person")
+                    {
+                        isPersonOnly = true;
+                        hasOtherMask = false;
+                        break;
+                    } else {
+                        hasOtherMask = true;
+                        isPersonOnly = false;
+                        //here this i might not be valid.
+                        (*objectIndexes)[maskIndex].push_back(num);
+                        break;
+                    }
+                }
+            }
+            if (!isPersonOnly||hasOtherMask) {
+                _mvKeys.push_back(mvKeys[i]);
+                _mDescriptors.push_back(mDescriptors.row(i));
+                num++;
+            }
+        }
+    }
+    if(hide){
+        mvKeys = _mvKeys;
+        mDescriptors =_mDescriptors;
+    }
+
+    N = mvKeys.size();
+    cout << "Keys size after = " << N << endl;
+    cout << "descriptor size after = "<< mDescriptors.size() <<endl;
+    for (size_t maskIndex = 0; maskIndex < objectIndexes->size(); ++maskIndex) {
+        std::cout << "Keypoints inside mask " << maskIndex << ": " 
+                  <<  (*objectIndexes)[maskIndex].size() << std::endl;
+    }
+
+    UndistortKeyPoints();
+
+    ComputeStereoFromRGBD(imDepth);
+
+    mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+
+    mmProjectPoints.clear();
+    mmMatchedInImage.clear();
+
+    mvbOutlier = vector<bool>(N,false);
+
+    // This is done only for the first Frame (or after a change in the calibration)
+    if(mbInitialComputations)
+    {
+        ComputeImageBounds(imGray);
+
+        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
+        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
+
+        fx = K.at<float>(0,0);
+        fy = K.at<float>(1,1);
+        cx = K.at<float>(0,2);
+        cy = K.at<float>(1,2);
+        invfx = 1.0f/fx;
+        invfy = 1.0f/fy;
+
+        mbInitialComputations=false;
+    }
+
+    mb = mbf/fx;
+
+    if(pPrevF){
+        if(pPrevF->HasVelocity())
+            SetVelocity(pPrevF->GetVelocity());
+    }
+    else{
+        mVw.setZero();
+    }
+
+    mpMutexImu = new std::mutex();
+
+    //Set no stereo fisheye information
+    Nleft = -1;
+    Nright = -1;
+    mvLeftToRightMatch = vector<int>(0);
+    mvRightToLeftMatch = vector<int>(0);
+    mvStereo3Dpoints = vector<Eigen::Vector3f>(0);
+    monoLeft = -1;
+    monoRight = -1;
+
+    AssignFeaturesToGrid();
+}
 
 Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),

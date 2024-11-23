@@ -108,7 +108,7 @@ void YoloDetect::LoadClassNames()
 		torch::Tensor seg_pred = preds[1].toTensor();
 		cout << "seg_pred.sizes" << seg_pred.sizes()<< endl;
 
-		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.5, 0.7);
+		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.7, 0.8);
 		cout << "det.size =" << det_vector.size() << endl;
 	    //similar github https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/blob/7fd1386da091fd4c7382ef258c3ac8077af5bbb8/YoloV8DLLProject/dllmain.cpp#L381
 		if(det_vector.size()==0)
@@ -149,7 +149,7 @@ void YoloDetect::LoadClassNames()
 		  	seg_pred = seg_pred.view({1, 32, -1});
 		  	auto final_seg = torch::matmul(seg_rois, seg_pred).view({1, 160, 160});
 		  	final_seg = final_seg.sigmoid();  // Apply sigmoid to get mask probabilities.
-		  	float _seg_thresh = 0.5f;
+		  	float _seg_thresh = 0.9f;
 		  	final_seg = ((final_seg > _seg_thresh) * 255).clamp(0, 255).to(torch::kCPU).to(torch::kU8);
 		  	// Convert probabilities to binary mask.
 		  	cv::Mat seg_map(160, 160, CV_8UC1,final_seg.data_ptr());
@@ -157,8 +157,10 @@ void YoloDetect::LoadClassNames()
 		    cv::Mat object_seg_map;
 		    cv::resize(seg_map, object_seg_map, cv::Size(org_width, org_height),
 		               cv::INTER_LINEAR);  	
-		  	// cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
-		  	// cv::imshow("Segmentation Map", seg_map2);
+		  	if(mClassnames[classID]=="person"){
+		  		cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
+		  		cv::imshow("Segmentation Map", object_seg_map);
+		  	}
 		  	// cv::waitKey(0);
 		  	AddNewObject(objectArea, mClassnames[classID],object_seg_map);
 		}
