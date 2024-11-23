@@ -207,9 +207,6 @@ public:
 
     unsigned int mnOriginMapId;
 
-    std::string mclassID;
-    MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map* pMap, std::string classId);
-
 protected:    
 
      // Position in absolute coordinates

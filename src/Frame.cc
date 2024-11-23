@@ -568,7 +568,6 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     cout<<"YoloDetect2 Frame!"<<endl;
     for(int i =0; i<mvObjectMasks.size(); i++)
         (*objectIndexes)[i].reserve(M);
-    mvKeyPointsIDS.reserve(M);
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
     bool hide = true;
     cout << "M="<< M<< endl;
@@ -594,15 +593,11 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
                         isPersonOnly = false;
                         //here this i might not be valid.
                         (*objectIndexes)[maskIndex].push_back(num);
-                        mvKeyPointsIDS.push_back(objectIds[maskIndex]);
                         break;
                     }
-                } else { //outside the mask
-                    mvKeyPointsIDS.push_back("");
-                    break;
                 }
             }
-            if (!isPersonOnly&&hasOtherMask) {
+            if (!isPersonOnly||hasOtherMask) {
                 _mvKeys.push_back(mvKeys[i]);
                 _mDescriptors.push_back(mDescriptors.row(i));
                 num++;
@@ -621,7 +616,6 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
         std::cout << "Keypoints inside mask " << maskIndex << ": " 
                   <<  (*objectIndexes)[maskIndex].size() << std::endl;
     }
-    cout << "mvKeyPointsIDS.size = " << mvKeyPointsIDS.size() << endl;
     if(mvKeys.empty())
         return;
 

@@ -3396,16 +3396,9 @@ void Tracking::CreateNewKeyFrame()
                     else{
                         x3D = mCurrentFrame.UnprojectStereoFishEye(i);
                     }
-                    MapPoint* pNewMP;
-                    if(!mpObjects.empty()) {
-                        pNewMP = new MapPoint(x3D,pKF,mpAtlas->GetCurrentMap(), mCurrentFrame.mvKeyPointsIDS[i]);
-                        pNewMP->AddObservation(pKF,i);
-                    }
-                    else{
-                        pNewMP = new MapPoint(x3D,pKF,mpAtlas->GetCurrentMap(), "None");
-                        pNewMP->AddObservation(pKF,i);
-                    }
-                    
+
+                    MapPoint* pNewMP = new MapPoint(x3D,pKF,mpAtlas->GetCurrentMap());
+                    pNewMP->AddObservation(pKF,i);
 
                     //Check if it is a stereo observation in order to not
                     //duplicate mappoints
@@ -3422,13 +3415,10 @@ void Tracking::CreateNewKeyFrame()
 
                     mCurrentFrame.mvpMapPoints[i]=pNewMP;
                     nPoints++;
-
-                    cout << "mCurrentFrame.mvKeyPointsIDS.size() inside keyFrame =" <<mCurrentFrame.mvKeyPointsIDS.size()<<endl;
                 }
                 else
                 {
                     nPoints++;
-                    cout <<"MapPoint not created." <<endl;
                 }
 
                 if(vDepthIdx[j].first>mThDepth && nPoints>maxPoint)

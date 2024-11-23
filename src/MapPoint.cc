@@ -33,7 +33,6 @@ MapPoint::MapPoint():
     mnCorrectedReference(0), mnBAGlobalForKF(0), mnVisible(1), mnFound(1), mbBad(false),
     mpReplaced(static_cast<MapPoint*>(NULL))
 {
-    cout << "I'm here4" << endl;
     mpReplaced = static_cast<MapPoint*>(NULL);
 }
 
@@ -47,33 +46,13 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map* pMap):
     SetWorldPos(Pos);
 
     mNormalVector.setZero();
-    cout << "I'm here 3" << endl;
-    mbTrackInViewR = false;
-    mbTrackInView = false;
-    // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
-    unique_lock<mutex> lock(mpMap->mMutexPointCreation);
-    mnId=nNextId++;
-}
-
-//Yolo modificated map point
-MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map* pMap, std::string classId):
-    mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), nObs(0), mnTrackReferenceForFrame(0),
-    mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
-    mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
-    mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
-    mnOriginMapId(pMap->GetId())
-{
-    SetWorldPos(Pos);
-    cout << "I'm here yolo" << endl;
-
-    mNormalVector.setZero();
 
     mbTrackInViewR = false;
     mbTrackInView = false;
+
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);
     mnId=nNextId++;
-    mclassID=classId;
 }
 
 MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF, KeyFrame* pHostKF, Map* pMap):
@@ -83,7 +62,6 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF,
     mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
     mnOriginMapId(pMap->GetId())
 {
-    cout << "I'm here 2" << endl;
     mInvDepth=invDepth;
     mInitU=(double)uv_init.x;
     mInitV=(double)uv_init.y;
@@ -104,7 +82,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, Frame* pFrame, const i
     mnFound(1), mbBad(false), mpReplaced(NULL), mpMap(pMap), mnOriginMapId(pMap->GetId())
 {
     SetWorldPos(Pos);
-    cout << "I'm here 1" << endl;
+
     Eigen::Vector3f Ow;
     if(pFrame -> Nleft == -1 || idxF < pFrame -> Nleft){
         Ow = pFrame->GetCameraCenter();
