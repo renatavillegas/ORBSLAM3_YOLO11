@@ -187,7 +187,6 @@ void Viewer::Run()
     pangolin::Var<bool> menuStop("menu.Stop",false,false);
     pangolin::Var<bool> menuStepByStep("menu.Step By Step",false,true);  // false, true
     pangolin::Var<bool> menuStep("menu.Step",false,false);
-
     pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
     // Define Camera Render Object (for view / scene browsing)
     pangolin::OpenGlRenderState s_cam(
@@ -313,7 +312,6 @@ void Viewer::Run()
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph, menuShowInertialGraph, menuShowOptLba);
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
-
         //mpMapDrawer->DrawObjectMapPoints();
         std::vector<YoloDetect::Object> objects = mpTracker->GetYoloDetectObject();
         if (!objects.empty())
@@ -321,12 +319,12 @@ void Viewer::Run()
             // Iterate over each object and draw it
             for (int i = 0; i < objects.size(); i++)
             {
-                mpMapDrawer->DrawObjectMapPoints(i, objects[i].classID);
+                if(objects[i].classID != "person")
+                    mpMapDrawer->DrawObjectMapPoints(i, objects[i].classID);
                 //mpMapDrawer->DrawObject(objects[i]);
             }
         }
-
-
+        DrawLegend();
         pangolin::FinishFrame();
 
         cv::Mat toShow;
@@ -349,7 +347,6 @@ void Viewer::Run()
 
         cv::imshow("ORB-SLAM3: Current Frame",toShow);
         cv::waitKey(mT);
-
         if(menuReset)
         {
             menuShowGraph = true;
@@ -461,4 +458,37 @@ void Viewer::Release()
     mbStopTrack = true;
 }*/
 
+void Viewer::DrawLegend()
+{
+    float startX = 0.0;
+    float startY = 0.0;
+    float lineSpacing = 0.15f;
+    float rectSize = 0.1f;
+    std::vector<std::pair<std::string, Eigen::Vector3f>> legendItems = {
+        {"chair", Eigen::Vector3f(0.5, 0.8, 0.3)},
+        {"keyboard", Eigen::Vector3f(0.8, 0.6, 0.2)},
+        {"tvmonitor", Eigen::Vector3f(0.9, 0.7, 0.1)},
+        {"bench", Eigen::Vector3f(0.7, 0.3, 0.9)},
+        {"mouse", Eigen::Vector3f(0.2, 0.8, 0.5)},
+        {"sofa", Eigen::Vector3f(0.3, 0.7, 0.6)},
+        {"cell phone", Eigen::Vector3f(0.4, 0.4, 0.7)},
+        {"laptop", Eigen::Vector3f(0.6, 0.2, 0.5)} 
+    };
+    glPushMatrix();
+    glDisable(GL_DEPTH_TEST);  
+    for (size_t i = 0; i < legendItems.size(); ++i)
+    {
+        const auto& [className, color] = legendItems[i];
+        float yPosition = startY + i * lineSpacing;
+
+        glColor3f(color[0], color[1], color[2]);
+        glRectf(startX, yPosition, startX + rectSize, yPosition + rectSize);
+
+        glColor3f(1.0, 1.0, 1.0);
+        mpMapDrawer->renderText(className, startX + rectSize + 0.01f, yPosition+0.05f, 1.0);
+    }
+
+    glEnable(GL_DEPTH_TEST);  // Reabilita profundidade
+    glPopMatrix();
+}
 }

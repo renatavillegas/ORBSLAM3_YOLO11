@@ -325,7 +325,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     int M = mvKeys.size();
     std::vector<cv::KeyPoint> _mvKeys;
     cv::Mat _mDescriptors;
-    cout<<"YoloDetect2 RGBD Frame!"<<endl;
+    //cout<<"YoloDetect2 RGBD Frame!"<<endl;
     for(int i =0; i<mvObjectMasks.size(); i++)
         (*objectIndexes)[i].reserve(M);
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
@@ -333,7 +333,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     cout << "M="<< M<< endl;
     if (M!=0 && !mvObjectMasks.empty()){
         int num=0;
-        cout << "mvObjectMasks.size()=" << mvObjectMasks.size() <<endl;
+        //cout << "mvObjectMasks.size()=" << mvObjectMasks.size() <<endl;
         for (int i =0; i< M; ++i){
             int x_r = floor(mvKeys[i].pt.x);
             int y_r = floor(mvKeys[i].pt.y);
@@ -370,12 +370,12 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     }
 
     N = mvKeys.size();
-    cout << "Keys size after = " << N << endl;
-    cout << "descriptor size after = "<< mDescriptors.size() <<endl;
-    for (size_t maskIndex = 0; maskIndex < objectIndexes->size(); ++maskIndex) {
-        std::cout << "Keypoints inside mask " << maskIndex << ": " 
-                  <<  (*objectIndexes)[maskIndex].size() << std::endl;
-    }
+    // cout << "Keys size after = " << N << endl;
+    // cout << "descriptor size after = "<< mDescriptors.size() <<endl;
+    // for (size_t maskIndex = 0; maskIndex < objectIndexes->size(); ++maskIndex) {
+    //     std::cout << "Keypoints inside mask " << maskIndex << ": " 
+    //               <<  (*objectIndexes)[maskIndex].size() << std::endl;
+    // }
 
     UndistortKeyPoints();
 
@@ -561,7 +561,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     cv::Mat _mDescriptors;
 //    std::vector<int> object_indexes;
     //cv::Mat mask = cv::Mat::zeros(imLeft.cols,imLeft.rows, CV_8UC1);
-    cout<<"YoloDetect Frame!"<<endl;
+    //cout<<"YoloDetect Frame!"<<endl;
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
     if (M<9000 && M!=0 && objectKeyPoints!=nullptr){
         int num=0;
@@ -587,8 +587,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 //    mDescriptors =_mDescriptors;
 
     N = mvKeys.size();
-    cout << "N=" << N << endl;
-    cout << "num="<< objectKeyPoints->size()<<endl;
+//    cout << "N=" << N << endl;
+//    cout << "num="<< objectKeyPoints->size()<<endl;
     if(mvKeys.empty())
         return;
 

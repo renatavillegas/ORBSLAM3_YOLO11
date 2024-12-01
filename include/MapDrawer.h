@@ -51,11 +51,13 @@ public:
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw);
     void DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID);
+    void DrawRectangleAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID);
     std::vector<Eigen::Vector3f> GetClosestPointsToMapCenter();
     void DrawRegion();
     void DrawObject(const YoloDetect::Object& object);
     void DrawObjectMapPoints(const YoloDetect::Object& object);
     void DrawObjectMapPoints(int index, std::string classID);
+    void renderText(const std::string& text, float x, float y, float scale=1.0f);
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);

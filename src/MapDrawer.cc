@@ -134,19 +134,6 @@ bool MapDrawer::ParseViewerParamFile(cv::FileStorage &fSettings)
     return !b_miss_params;
 }
 
-void RenderText(const std::string& text, float x, float y, float scale = 1.0f)
-{
-    // Defina a cor do texto (vermelho, por exemplo)
-    glColor3f(0.0f, 0.0f, 0.0f);
-
-    // Posiciona o texto na tela
-    glRasterPos2f(x, y);
-
-    // Renderiza cada caractere
-    for (const char &c : text) {
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-    }
-}
 bool glut_initialized = false;
 void InitializeGLUT() {
     int argc = 0;
@@ -155,6 +142,18 @@ void InitializeGLUT() {
         glut_initialized = true;
     }
 }
+
+void MapDrawer::renderText(const std::string& text, float x, float y, float scale)
+{
+    glColor3f(0.0f, 0.0f, 0.0f);
+
+    glRasterPos3f(x, y, 0.0);
+    InitializeGLUT();
+    for (const char &c : text) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+}
+
 Eigen::Vector3f CalculateCentroid(const std::vector<Eigen::Vector3f>& points) {
     Eigen::Vector3f centroid(0.0f, 0.0f, 0.0f);
     for (int i = 0; i < points.size(); i++) {
@@ -309,7 +308,45 @@ void MapDrawer::DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points,
     glPopMatrix();
     InitializeGLUT();
     std::string text = "ClassID: " + classID;
-    RenderText(text, vertices[0].x(), vertices[0].y());
+    renderText(text, vertices[0].x(), vertices[0].y(), 0.5);
+}
+
+void MapDrawer::DrawRectangleAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID) {
+    if (points.empty()) {
+        return;
+    }
+    Eigen::Vector3f minPoint = points[0];
+    Eigen::Vector3f maxPoint = points[0];
+    for(const auto& point: points)
+    {
+        minPoint = minPoint.cwiseMin(point);
+        maxPoint = maxPoint.cwiseMax(point);
+    }
+    Eigen::Vector3f vertices[4];
+    vertices[0] = minPoint;
+    vertices[1] = Eigen::Vector3f(maxPoint.x(), minPoint.y(), minPoint.z());
+    vertices[2] = Eigen::Vector3f(maxPoint.x(), maxPoint.y(), minPoint.z());
+    vertices[3] = Eigen::Vector3f(minPoint.x(), maxPoint.y(), minPoint.z());
+    Eigen::Vector3f center = (vertices[0] + vertices[1] + vertices[2] + vertices[3]) / 4.0f;
+    glPushMatrix();
+    glBegin(GL_LINES);
+    glColor3f(0.0, 1.0, 0.0);
+    glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
+    glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
+
+    glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
+    glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
+
+    glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
+    glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
+
+    glVertex3f(vertices[3].x(), vertices[3].y(), vertices[3].z());
+    glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
+    glEnd();
+    glPopMatrix();
+    InitializeGLUT();
+    std::string text = "ClassID: " + classID;
+    renderText(text, center.x(), center.y());
 }
 
 void MapDrawer::DrawRegion() {
@@ -752,7 +789,20 @@ void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
     const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetObjectMapPoints(index);
     glPointSize(5);
     glBegin(GL_POINTS);
-    glColor3f(0.0, 1.0, 0.0);
+    std::map<std::string, Eigen::Vector3f> classColors = {
+        {"chair", Eigen::Vector3f(0.659, 0.902, 0.639)}, // Light Green
+        {"keyboard", Eigen::Vector3f(1.0, 0.647, 0.0)}, // Orange
+        {"tvMonitor", Eigen::Vector3f(0.827, 0.827, 0.827)}, // Light Gray
+        {"bench", Eigen::Vector3f(0.822, 0.710, 0.549)}, // Light Brown
+        {"mouse", Eigen::Vector3f(0.439, 0.439, 0.439)}, // Dark Gray
+        {"sofa", Eigen::Vector3f(0.847, 0.698, 0.822)}, // Light Purple
+        {"cell phone", Eigen::Vector3f(1.0, 0.922, 0.231)} // Light Yellow
+    };
+    Eigen::Vector3f color = Eigen::Vector3f(0.0, 1.0, 0.0); // Default Green
+    if (classColors.find(classID) != classColors.end()) {
+        color = classColors[classID];
+    }
+    glColor3f(color.x(), color.y(), color.z());
     // All map points
     for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
     {
@@ -764,7 +814,7 @@ void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
     }
     glEnd();
     // Draw a cube around the valid points
-    DrawCubeAroundPoints(validPoints,classID);
+    //DrawRectangleAroundPoints(validPoints,classID);
 
 }
 

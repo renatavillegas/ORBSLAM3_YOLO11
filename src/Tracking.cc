@@ -1513,11 +1513,11 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
             objectAreaMask.push_back(mpObjects[i].objectMask);
             objectArea.push_back(mpObjects[i].area);
             objectIds.push_back(mpObjects[i].classID);
-            cout<<"New object Area:" << objectArea[i]<< endl;
+            //cout<<"New object Area:" << objectArea[i]<< endl;
         }
-        cout << "Number of masks: " << objectAreaMask.size() << endl;
-        cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
-        cout << "Number of object IDs: " << objectIds.size() << endl;
+        //cout << "Number of masks: " << objectAreaMask.size() << endl;
+        //cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
+        //cout << "Number of object IDs: " << objectIds.size() << endl;
 
     }
     //cout << "Incoming frame creation" << endl;
@@ -1610,11 +1610,11 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
             objectAreaMask.push_back(mpObjects[i].objectMask);
             objectArea.push_back(mpObjects[i].area);
             objectIds.push_back(mpObjects[i].classID);
-            cout<<"New object Area:" << objectArea[i]<< endl;
+//            cout<<"New object Area:" << objectArea[i]<< endl;
         }
-        cout << "Number of masks: " << objectAreaMask.size() << endl;
-        cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
-        cout << "Number of object IDs: " << objectIds.size() << endl;
+        // cout << "Number of masks: " << objectAreaMask.size() << endl;
+        // cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
+        // cout << "Number of object IDs: " << objectIds.size() << endl;
 
         mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,objectAreaMask, &mvObjectIndexes, objectIds);
     }
@@ -2291,7 +2291,6 @@ void Tracking::Track()
                 for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
                     int index = mvObjectIndexes[i][j];
                     MapPoint* pMP = mCurrentFrame.mvpMapPoints[index];
-                    //check max and min depths
                     if (pMP){
                         if(!pMP->isBad())
                             pCurrentMap->AddObjectMapPoint(pMP, i);
@@ -3061,28 +3060,7 @@ bool Tracking::TrackLocalMap()
     mTrackedFr++;
 
     UpdateLocalMap();
-    //if(mDetectedObjectSize<mpYoloDetect->GetObjects().size()){
-        //map only new objects
-        //int a=0;
-        // for(int i= mDetectedObjectSize; i<mpYoloDetect->GetObjects().size(); i++){
-        //     //SearchLocalPointsRegion(mpYoloDetect->GetObjects()[i].area, i);
-        //     for (vector<cv::KeyPoint>::iterator keypoint = mCurrentFrame.mvKeys.begin(),
-        //         keypointEnd = mCurrentFrame.mvKeys.end(); keypoint != keypointEnd; ++keypoint){
-        //         if (mpYoloDetect->GetObjects()[i].area.contains(keypoint->pt)){
-        //             cout <<"keypoint inside the area"<<endl;
-        //             a++;
-        //             keypoint = mCurrentFrame.mvKeys.erase(keypoint);
-        //         }
-        //         else {
-        //         //++keypoint; // Avança o iterador se não foi apagado
-        //         }
-        //     }
-        // }
-        // mDetectedObjectSize = mpYoloDetect->GetObjects().size();
-        // cout << "mDetectedObjectSize=" << mDetectedObjectSize<<endl;
-        // cout << "mCurrentFrame.mvKeys=" << mCurrentFrame.mvKeys.size()<< "a="<<a<<endl;;
-    //}
-    //SearchLocalPoints();
+
     // TOO check outliers before PO
     int aux1 = 0, aux2=0;
     for(int i=0; i<mCurrentFrame.N; i++)

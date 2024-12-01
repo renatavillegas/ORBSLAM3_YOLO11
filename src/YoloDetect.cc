@@ -35,7 +35,7 @@ void YoloDetect::LoadClassNames()
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
 		newObject.area = cv::Rect2i(area_x, area_y, area_width, area_height);
-		cout<<"newObjectArea="<< newObject.area<<endl;
+		//cout<<"newObjectArea="<< newObject.area<<endl;
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		newObject.objectMask = objectMask;
@@ -98,19 +98,19 @@ void YoloDetect::LoadClassNames()
 	    torch::jit::IValue output = mModule.forward(inputs);
 	    //extract predictions
 	    auto preds = output.toTuple()->elements();
-	    cout << "preds.size=" <<preds.size()<< endl;
+	    // cout << "preds.size=" <<preds.size()<< endl;
 
-		for (size_t i = 0; i < preds.size(); ++i) {
-		    torch::Tensor tensor = preds[i].toTensor();
-		    cout << "Tensor " << i << ": " << tensor.sizes() << std::endl;
-		}
+		// for (size_t i = 0; i < preds.size(); ++i) {
+		//     torch::Tensor tensor = preds[i].toTensor();
+		//     cout << "Tensor " << i << ": " << tensor.sizes() << std::endl;
+		// }
 		torch::Tensor detections = preds[0].toTensor();
 		detections = detections.transpose(1, 2).contiguous();
 		torch::Tensor seg_pred = preds[1].toTensor();
-		cout << "seg_pred.sizes" << seg_pred.sizes()<< endl;
+		// cout << "seg_pred.sizes" << seg_pred.sizes()<< endl;
 
 		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.7, 0.8);
-		cout << "det.size =" << det_vector.size() << endl;
+		// cout << "det.size =" << det_vector.size() << endl;
 	    //similar github https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/blob/7fd1386da091fd4c7382ef258c3ac8077af5bbb8/YoloV8DLLProject/dllmain.cpp#L381
 		if(det_vector.size()==0)
 			return;
@@ -142,8 +142,8 @@ void YoloDetect::LoadClassNames()
 		    int classID = det[i][37].item().toFloat(); // I'm saving the classID in the last element. 
 		    // Assign detection properties to the objects array.
 		    cv::Rect2i objectArea(left, top, right - left, bottom - top);
-		  	cout << "objectArea = " << objectArea<< endl;
-		  	cout << "classID=" << mClassnames[classID]<< endl;
+		  	//cout << "objectArea = " << objectArea<< endl;
+		  	//cout << "classID=" << mClassnames[classID]<< endl;
 		  	seg_rois = det[i].slice(0, 5, det[i].sizes()[0]-1);  // Extract segmentation ROI.(the latest element is the classID)
 		  	seg_rois = seg_rois.view({1, 32}).to(torch::kCUDA);
 		  	seg_pred = seg_pred.to(torch::kCUDA);
@@ -266,7 +266,7 @@ vector<torch::Tensor> YoloDetect::non_max_suppression(torch::Tensor preds, float
         output.push_back(torch::index_select(dets, 0, keep.slice(0, 0, count)));
 //        cout << "keep="<< keep <<endl;
 //        cout << "count=" << count <<endl;
-        cout << "output="<< output<< endl;;
+        // cout << "output="<< output<< endl;;
     }
 
     return output;
@@ -363,10 +363,10 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 		    }
 		    keep = keep.slice(0, 0, count);
 		    predLoc = torch::index_select(predLoc, 0, keep).to(torch::kCPU);
-		    cout << "count = " << count << endl;
+		    // cout << "count = " << count << endl;
 		    //select the keep detections to add to the output 
 		    output.push_back(torch::index_select(dets, 0, keep));
-		    cout << "output.size=" << output[0].sizes()<< endl;
+		    // cout << "output.size=" << output[0].sizes()<< endl;
 		 } else {
 		 	continue;
 		 }

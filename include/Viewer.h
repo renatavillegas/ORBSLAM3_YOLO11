@@ -62,6 +62,7 @@ public:
     void Release();
 
     //void SetTrackingPause();
+    void DrawLegend();
 
     bool both;
 private:
