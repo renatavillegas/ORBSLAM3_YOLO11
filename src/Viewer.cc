@@ -465,14 +465,15 @@ void Viewer::DrawLegend()
     float lineSpacing = 0.15f;
     float rectSize = 0.1f;
     std::vector<std::pair<std::string, Eigen::Vector3f>> legendItems = {
-        {"chair", Eigen::Vector3f(0.5, 0.8, 0.3)},
-        {"keyboard", Eigen::Vector3f(0.8, 0.6, 0.2)},
-        {"tvmonitor", Eigen::Vector3f(0.9, 0.7, 0.1)},
-        {"bench", Eigen::Vector3f(0.7, 0.3, 0.9)},
-        {"mouse", Eigen::Vector3f(0.2, 0.8, 0.5)},
-        {"sofa", Eigen::Vector3f(0.3, 0.7, 0.6)},
-        {"cell phone", Eigen::Vector3f(0.4, 0.4, 0.7)},
-        {"laptop", Eigen::Vector3f(0.6, 0.2, 0.5)} 
+        {"chair", Eigen::Vector3f(0.133, 0.545, 0.133)},
+        {"keyboard", Eigen::Vector3f(1.000, 0.549, 0.000)},
+        {"tvMonitor", Eigen::Vector3f(0.000, 0.749, 1.000)},
+        {"bench", Eigen::Vector3f(0.545, 0.271, 0.075)},
+        {"mouse", Eigen::Vector3f(0.576, 0.439, 0.859)},
+        {"sofa", Eigen::Vector3f(0.824, 0.412, 0.118)},
+        {"cell phone", Eigen::Vector3f(1.000, 0.843, 0.000)},
+        {"Not Mapped", Eigen::Vector3f(0.000, 1.0, 0.000)},
+
     };
     glPushMatrix();
     glDisable(GL_DEPTH_TEST);  

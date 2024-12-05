@@ -40,17 +40,18 @@ public:
 	//thread function 
 	void Run();
 	void AddNewObject(int area_x, int area_y, int area_width, int area_height,std::string classID, cv::Mat objectImage, std::pair<float, float> object_depth);
-	void AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap);
-
+	void AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap, bool isDynamic);
 	void SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints);
 	void SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints);
 	std::pair<float, float> CalculateDepth(cv::Rect xLeft, cv::Rect xRight, float bf);
 	std::vector<Object> GetObjects();
+	std::vector<Object> GetDynamicObjects();
 	void ClearObjects();
 	bool newObjct;
 private:
 	std::mutex mMutex;
 	std::vector<Object> mObjects;
+	std::vector<Object> mDynamicObjects;
 };
 }// namespace ORB_SLAM3
 #endif // DETECTOR_H

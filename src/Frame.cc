@@ -329,7 +329,6 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     for(int i =0; i<mvObjectMasks.size(); i++)
         (*objectIndexes)[i].reserve(M);
     //mask(cv::Rect(0, 0, imLeft.cols/2, imLeft.rows/2)).setTo(1);
-    bool hide = true;
     cout << "M="<< M<< endl;
     if (M!=0 && !mvObjectMasks.empty()){
         int num=0;
@@ -337,37 +336,24 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
         for (int i =0; i< M; ++i){
             int x_r = floor(mvKeys[i].pt.x);
             int y_r = floor(mvKeys[i].pt.y);
-            bool hasOtherMask = true;
-            bool isPersonOnly=false;
+            bool hide = false;
             for (size_t maskIndex = 0; maskIndex < mvObjectMasks.size(); ++maskIndex) {
                 if ((int)mvObjectMasks[maskIndex].at<uchar>(y_r, x_r) > 0) {
                     //keypoint inside the mask. If it's a person, we can ignore these points
                     //cout <<"classID="<<objectIds[maskIndex]<<endl;
-                    if(objectIds[maskIndex] == "person")
-                    {
-                        isPersonOnly = true;
-                        hasOtherMask = false;
-                        break;
-                    } else {
-                        hasOtherMask = true;
-                        isPersonOnly = false;
-                        //here this i might not be valid.
-                        (*objectIndexes)[maskIndex].push_back(num);
-                        break;
-                    }
+                    hide = true;
+                    break;
                 }
             }
-            if (!isPersonOnly||hasOtherMask) {
+            if (!hide) {
                 _mvKeys.push_back(mvKeys[i]);
                 _mDescriptors.push_back(mDescriptors.row(i));
                 num++;
             }
         }
     }
-    if(hide){
-        mvKeys = _mvKeys;
-        mDescriptors =_mDescriptors;
-    }
+    mvKeys = _mvKeys;
+    mDescriptors =_mDescriptors;
 
     N = mvKeys.size();
     // cout << "Keys size after = " << N << endl;

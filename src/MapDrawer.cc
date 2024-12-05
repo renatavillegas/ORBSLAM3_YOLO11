@@ -787,16 +787,17 @@ void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
     std::vector<Eigen::Vector3f> validPoints;
     // Define points
     const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetObjectMapPoints(index);
-    glPointSize(5);
+    glPointSize(10);
     glBegin(GL_POINTS);
-    std::map<std::string, Eigen::Vector3f> classColors = {
-        {"chair", Eigen::Vector3f(0.659, 0.902, 0.639)}, // Light Green
-        {"keyboard", Eigen::Vector3f(1.0, 0.647, 0.0)}, // Orange
-        {"tvMonitor", Eigen::Vector3f(0.827, 0.827, 0.827)}, // Light Gray
-        {"bench", Eigen::Vector3f(0.822, 0.710, 0.549)}, // Light Brown
-        {"mouse", Eigen::Vector3f(0.439, 0.439, 0.439)}, // Dark Gray
-        {"sofa", Eigen::Vector3f(0.847, 0.698, 0.822)}, // Light Purple
-        {"cell phone", Eigen::Vector3f(1.0, 0.922, 0.231)} // Light Yellow
+    std::map<std::string, Eigen::Vector3f> classColors = 
+    {
+        {"chair", Eigen::Vector3f(0.133, 0.545, 0.133)},
+        {"keyboard", Eigen::Vector3f(1.000, 0.549, 0.000)},
+        {"tvmonitor", Eigen::Vector3f(0.000, 0.749, 1.000)},
+        {"bench", Eigen::Vector3f(0.545, 0.271, 0.075)},
+        {"mouse", Eigen::Vector3f(0.576, 0.439, 0.859)},
+        {"sofa", Eigen::Vector3f(0.824, 0.412, 0.118)},
+        {"cell phone", Eigen::Vector3f(1.000, 0.843, 0.000)}
     };
     Eigen::Vector3f color = Eigen::Vector3f(0.0, 1.0, 0.0); // Default Green
     if (classColors.find(classID) != classColors.end()) {

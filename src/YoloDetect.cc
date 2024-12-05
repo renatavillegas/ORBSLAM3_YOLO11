@@ -43,7 +43,7 @@ void YoloDetect::LoadClassNames()
 		mObjects.push_back(newObject);
 	}
 	//With the segmentation map 
-	void YoloDetect::AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap)
+	void YoloDetect::AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap, bool isDynamic)
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		Object newObject;
@@ -51,12 +51,16 @@ void YoloDetect::LoadClassNames()
 		newObject.classID = classID;
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		newObject.objectMask = objectSegMap;
-		mObjects.push_back(newObject);
+		if(isDynamic)
+			mDynamicObjects.push_back(newObject);
+		else
+			mObjects.push_back(newObject);
 	}
 
 	void YoloDetect::ClearObjects()
 	{
 		mObjects.clear();
+		mDynamicObjects.clear();
 	}
 	std::pair<float, float> YoloDetect::CalculateDepth(cv::Rect boudingboxLeft, cv::Rect boudingboxRight, float bf)
 	{
@@ -158,23 +162,31 @@ void YoloDetect::LoadClassNames()
 		    cv::Mat object_seg_map;
 		    cv::resize(seg_map, object_seg_map, cv::Size(org_width, org_height),
 		               cv::INTER_LINEAR);  	
-		  	// if(mClassnames[classID]=="person"){
+		  	if(mClassnames[classID]=="person"){
 		  	// 	cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
 		  	// 	cv::imshow("Segmentation Map", object_seg_map);
 		  	// }
 		  	// cv::waitKey(0);
-		  	AddNewObject(objectArea, mClassnames[classID],object_seg_map);
+		  		AddNewObject(objectArea, mClassnames[classID],object_seg_map, true);
+		  	}
+		  	else {
+		  		AddNewObject(objectArea, mClassnames[classID],object_seg_map, false);
+		  	}
 		}
 	}
 
 
 	std::vector<YoloDetect::Object> YoloDetect::GetObjects()
     {
-    	if(!mObjects.empty())
-        	std::lock_guard<std::mutex> lock(mMutex); 
-        	return mObjects;
+       	std::lock_guard<std::mutex> lock(mMutex); 
         return mObjects;
     }
+	std::vector<YoloDetect::Object> YoloDetect::GetDynamicObjects()
+    {
+        std::lock_guard<std::mutex> lock(mMutex); 
+        return mDynamicObjects;
+    }
+
     void YoloDetect::SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints)
     {
     	std::lock_guard<std::mutex> lock(mMutex);

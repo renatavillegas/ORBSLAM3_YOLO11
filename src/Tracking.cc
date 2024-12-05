@@ -1597,22 +1597,23 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     if((fabs(mDepthMapFactor-1.0f)>1e-5) || imDepth.type()!=CV_32F)
         imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
 
-    if(mSensor == System::RGBD && !mpYoloDetect->GetObjects().empty())
+    if(mSensor == System::RGBD && !mpYoloDetect->GetDynamicObjects().empty())
     {
         //add object areas to pass to frame!
         std::vector<cv::Mat> objectAreaMask;
         std::vector<cv::Rect2i> objectArea;
         std::vector<string> objectIds;
-        mpObjects = mpYoloDetect->GetObjects();
-        for(int i = 0; i<mpObjects.size();i++)
+        //get only the Dynamic objects to pass to the Frame
+        mpDynamicObjects = mpYoloDetect->GetDynamicObjects();
+        for(int i = 0; i<mpDynamicObjects.size();i++)
         {
-            mvObjectIndexes.resize(mpObjects.size());
-            objectAreaMask.push_back(mpObjects[i].objectMask);
-            objectArea.push_back(mpObjects[i].area);
-            objectIds.push_back(mpObjects[i].classID);
+            mvObjectIndexes.resize(mpDynamicObjects.size());
+            objectAreaMask.push_back(mpDynamicObjects[i].objectMask);
+            objectArea.push_back(mpDynamicObjects[i].area);
+            objectIds.push_back(mpDynamicObjects[i].classID);
 //            cout<<"New object Area:" << objectArea[i]<< endl;
         }
-        // cout << "Number of masks: " << objectAreaMask.size() << endl;
+        cout << "Number of masks: " << objectAreaMask.size() << endl;
         // cout << "Number of object indexes: " << mvObjectIndexes.size() << endl;
         // cout << "Number of object IDs: " << objectIds.size() << endl;
 
@@ -2281,23 +2282,23 @@ void Tracking::Track()
 #endif
         // Add the object map points to the vector
         // i is the number of objects and j is the index of the KeyPoint/MapPoint related to this object.
-        if (!mvObjectIndexes.empty()) {
-            pCurrentMap->EraseObjectMapPoints();
-            pCurrentMap->mvpObjectMapPoints.resize(mvObjectIndexes.size());
-            for (int i = 0; i < mvObjectIndexes.size(); i++) {
-                bool has_mapPoint = true;
-                if (mpObjects[i].classID=="person")
-                    continue;
-                for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
-                    int index = mvObjectIndexes[i][j];
-                    MapPoint* pMP = mCurrentFrame.mvpMapPoints[index];
-                    if (pMP){
-                        if(!pMP->isBad())
-                            pCurrentMap->AddObjectMapPoint(pMP, i);
-                    }
-                }
-            }
-        }
+        // if (!mvObjectIndexes.empty()) {
+        //     pCurrentMap->EraseObjectMapPoints();
+        //     pCurrentMap->mvpObjectMapPoints.resize(mvObjectIndexes.size());
+        //     for (int i = 0; i < mvObjectIndexes.size(); i++) {
+        //         bool has_mapPoint = true;
+        //         if (mpObjects[i].classID=="person")
+        //             continue;
+        //         for (int j = 0; j < mvObjectIndexes[i].size(); j++) {
+        //             int index = mvObjectIndexes[i][j];
+        //             MapPoint* pMP = mCurrentFrame.mvpMapPoints[index];
+        //             if (pMP){
+        //                 if(!pMP->isBad())
+        //                     pCurrentMap->AddObjectMapPoint(pMP, i);
+        //             }
+        //         }
+        //     }
+        // }
 
 
         // Update drawer
