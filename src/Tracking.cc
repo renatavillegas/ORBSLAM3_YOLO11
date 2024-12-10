@@ -1504,15 +1504,15 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     std::vector<cv::Mat> objectAreaMask;
     std::vector<cv::Rect2i> objectArea;
     std::vector<string> objectIds;
-    if(!mpYoloDetect->GetObjects().empty())
+    if(!mpYoloDetect->GetDynamicObjects().empty())
     {
-        mpObjects = mpYoloDetect->GetObjects();
-        for(int i = 0; i<mpObjects.size();i++)
+        mpDynamicObjects = mpYoloDetect->GetDynamicObjects();
+        for(int i = 0; i<mpDynamicObjects.size();i++)
         {
-            mvObjectIndexes.resize(mpObjects.size());
-            objectAreaMask.push_back(mpObjects[i].objectMask);
-            objectArea.push_back(mpObjects[i].area);
-            objectIds.push_back(mpObjects[i].classID);
+            mvObjectIndexes.resize(mpDynamicObjects.size());
+            objectAreaMask.push_back(mpDynamicObjects[i].objectMask);
+            objectArea.push_back(mpDynamicObjects[i].area);
+            objectIds.push_back(mpDynamicObjects[i].classID);
             //cout<<"New object Area:" << objectArea[i]<< endl;
         }
         //cout << "Number of masks: " << objectAreaMask.size() << endl;
@@ -1523,7 +1523,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //cout << "Incoming frame creation" << endl;
     //yolo Detect frame
     if (mSensor == System::STEREO && !mpCamera2 && !objectAreaMask.empty()){
-        std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
+        //std::vector<cv::KeyPoint> &objectKeypoints = mpObjects[0].keyPoints;
         //here we can pass an array of indexes arrays and an array of objectMasks. 
         //mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera, objectAreaMask, &objectKeypoints, &mvobjectIndexes);
         mCurrentFrame = Frame(mImGray, imGrayRight, timestamp, mpORBextractorLeft, mpORBextractorRight, mpORBVocabulary, mK, mDistCoef, mbf, mThDepth, mpCamera, objectAreaMask, &mvObjectIndexes, objectIds);
@@ -1561,6 +1561,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     //     SearchLocalPointsRegion(mpObjects[0].area, 0);
     // }
     //cout << "Tracking end" << endl;
+    mpDynamicObjects.clear();
     mpObjects.clear();
     mpYoloDetect->ClearObjects();
     //mCurrentFrame.mvpMapPoints.clear();

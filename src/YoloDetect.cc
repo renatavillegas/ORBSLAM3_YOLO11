@@ -113,7 +113,7 @@ void YoloDetect::LoadClassNames()
 		torch::Tensor seg_pred = preds[1].toTensor();
 		// cout << "seg_pred.sizes" << seg_pred.sizes()<< endl;
 
-		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.7, 0.8);
+		vector<torch::Tensor> det_vector = non_max_suppression_seg(detections, 0.5, 0.6);
 		// cout << "det.size =" << det_vector.size() << endl;
 	    //similar github https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/blob/7fd1386da091fd4c7382ef258c3ac8077af5bbb8/YoloV8DLLProject/dllmain.cpp#L381
 		if(det_vector.size()==0)
