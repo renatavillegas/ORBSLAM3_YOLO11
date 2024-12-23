@@ -402,7 +402,7 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 		while(true)
 		{
 			Detect();
-			usleep(10000);
+			usleep(1000);
 		}
 	}
 } //namespace ORB_SLAM3
