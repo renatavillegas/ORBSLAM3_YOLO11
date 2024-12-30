@@ -144,6 +144,8 @@ void YoloDetect::LoadClassNames()
 		        bottom, (float)(org_height -1));  // Ensure bottom does not exceed image height.
 		    float score =det[i][4].item().toFloat();  // Get the detection confidence score.
 		    int classID = det[i][37].item().toFloat(); // I'm saving the classID in the last element. 
+		    if (mClassnames[classID]=="person")
+		    	continue;
 		    // Assign detection properties to the objects array.
 		    cv::Rect2i objectArea(left, top, right - left, bottom - top);
 		  	//cout << "objectArea = " << objectArea<< endl;
@@ -162,16 +164,15 @@ void YoloDetect::LoadClassNames()
 		    cv::Mat object_seg_map;
 		    cv::resize(seg_map, object_seg_map, cv::Size(org_width, org_height),
 		               cv::INTER_LINEAR);  	
-		  	if(mClassnames[classID]=="person"){
-		  	// 	cv::namedWindow("Segmentation Map", cv::WINDOW_NORMAL);
-		  	// 	cv::imshow("Segmentation Map", object_seg_map);
-		  	// }
-		  	// cv::waitKey(0);
+		  	//if(mClassnames[classID]=="person"){
+		  	 	//cv::namedWindow("Segmentation Mask", cv::WINDOW_NORMAL);
+		  	 	//cv::imshow("Segmentation Mask", object_seg_map);
+		  	 	//cv::waitKey(0); 
 		  		AddNewObject(objectArea, mClassnames[classID],object_seg_map, true);
-		  	}
-		  	else {
-		  		AddNewObject(objectArea, mClassnames[classID],object_seg_map, false);
-		  	}
+		  	//}
+		  	//else {
+		  		//AddNewObject(objectArea, mClassnames[classID],object_seg_map, false);
+		  	//}
 		}
 	}
 
