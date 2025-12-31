@@ -90,5 +90,7 @@ Table_TUMVI_rooms/
 my_settings.txt
 
 borrar/*
-
+Thirdparty/libtorch/*
+datasets/*
+yolo_env/*
 */ExecMean.txt
