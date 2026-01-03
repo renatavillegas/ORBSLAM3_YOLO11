@@ -187,6 +187,7 @@ void Viewer::Run()
     pangolin::Var<bool> menuStop("menu.Stop",false,false);
     pangolin::Var<bool> menuStepByStep("menu.Step By Step",false,true);  // false, true
     pangolin::Var<bool> menuStep("menu.Step",false,false);
+
     pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
     // Define Camera Render Object (for view / scene browsing)
     pangolin::OpenGlRenderState s_cam(
@@ -216,6 +217,7 @@ void Viewer::Run()
     }
 
     float trackedImageScale = mpTracker->GetImageScale();
+
     cout << "Starting the Viewer" << endl;
     while(1)
     {
@@ -312,6 +314,7 @@ void Viewer::Run()
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph, menuShowInertialGraph, menuShowOptLba);
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
+
         pangolin::FinishFrame();
 
         cv::Mat toShow;
@@ -334,6 +337,7 @@ void Viewer::Run()
 
         cv::imshow("ORB-SLAM3: Current Frame",toShow);
         cv::waitKey(mT);
+
         if(menuReset)
         {
             menuShowGraph = true;
@@ -445,38 +449,4 @@ void Viewer::Release()
     mbStopTrack = true;
 }*/
 
-void Viewer::DrawLegend()
-{
-    float startX = 0.0;
-    float startY = 0.0;
-    float lineSpacing = 0.15f;
-    float rectSize = 0.1f;
-    std::vector<std::pair<std::string, Eigen::Vector3f>> legendItems = {
-        {"chair", Eigen::Vector3f(0.133, 0.545, 0.133)},
-        {"keyboard", Eigen::Vector3f(1.000, 0.549, 0.000)},
-        {"tvMonitor", Eigen::Vector3f(0.000, 0.749, 1.000)},
-        {"bench", Eigen::Vector3f(0.545, 0.271, 0.075)},
-        {"mouse", Eigen::Vector3f(0.576, 0.439, 0.859)},
-        {"sofa", Eigen::Vector3f(0.824, 0.412, 0.118)},
-        {"cell phone", Eigen::Vector3f(1.000, 0.843, 0.000)},
-        {"Not Mapped", Eigen::Vector3f(0.000, 1.0, 0.000)},
-
-    };
-    glPushMatrix();
-    glDisable(GL_DEPTH_TEST);  
-    for (size_t i = 0; i < legendItems.size(); ++i)
-    {
-        const auto& [className, color] = legendItems[i];
-        float yPosition = startY + i * lineSpacing;
-
-        glColor3f(color[0], color[1], color[2]);
-        glRectf(startX, yPosition, startX + rectSize, yPosition + rectSize);
-
-        glColor3f(1.0, 1.0, 1.0);
-        mpMapDrawer->renderText(className, startX + rectSize + 0.01f, yPosition+0.05f, 1.0);
-    }
-
-    glEnable(GL_DEPTH_TEST);  // Reabilita profundidade
-    glPopMatrix();
-}
 }

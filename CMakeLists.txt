@@ -59,7 +59,6 @@ MESSAGE(${OpenCV_VERSION})
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(realsense2)
-find_package(GLUT REQUIRED)
 find_package(Torch REQUIRED)
 if(CUDA_SUPPORTED)
     find_package(CUDA REQUIRED)
@@ -74,7 +73,6 @@ ${PROJECT_SOURCE_DIR}/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
-${GLUT_INCLUDE_DIRS}
 ${TORCH_INCLUDE_DIRS}
 if(CUDA_SUPPORTED)
     ${CUDA_INCLUDE_DIRS}
@@ -111,7 +109,6 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 -lboost_serialization
 -lcrypto
-${GLUT_LIBRARIES} 
 ${OPENGL_LIBRARIES} 
 ${TORCH_LIBRARIES}
 )

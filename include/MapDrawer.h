@@ -25,7 +25,6 @@
 #include"KeyFrame.h"
 #include "Settings.h"
 #include<pangolin/pangolin.h>
-#include "YoloDetect.h";
 
 #include<mutex>
 
@@ -39,7 +38,7 @@ class MapDrawer
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings);
-    //MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings, YoloDetect* pYoloDetect);
+
     void newParameterLoader(Settings* settings);
 
     Atlas* mpAtlas;
@@ -50,14 +49,7 @@ public:
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw);
-    void DrawCubeAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID);
-    void DrawRectangleAroundPoints(const std::vector<Eigen::Vector3f>& points, std::string classID);
-    std::vector<Eigen::Vector3f> GetClosestPointsToMapCenter();
-    void DrawRegion();
-    void DrawObject(const YoloDetect::Object& object);
-    void DrawObjectMapPoints(const YoloDetect::Object& object);
-    void DrawObjectMapPoints(int index, std::string classID);
-    void renderText(const std::string& text, float x, float y, float scale=1.0f);
+
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);
@@ -79,7 +71,6 @@ private:
                                 {0.6f, 0.0f, 1.0f},
                                 {1.0f, 1.0f, 0.0f},
                                 {0.0f, 1.0f, 1.0f}};
-    YoloDetect* mpYoloDetect;
 
 };
 
