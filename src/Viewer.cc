@@ -312,19 +312,6 @@ void Viewer::Run()
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph, menuShowInertialGraph, menuShowOptLba);
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
-        //mpMapDrawer->DrawObjectMapPoints();
-        std::vector<YoloDetect::Object> objects = mpTracker->GetYoloDetectObject();
-        if (!objects.empty())
-        {
-            // Iterate over each object and draw it
-            for (int i = 0; i < objects.size(); i++)
-            {
-                if(objects[i].classID != "person")
-                    mpMapDrawer->DrawObjectMapPoints(i, objects[i].classID);
-                //mpMapDrawer->DrawObject(objects[i]);
-            }
-        }
-        DrawLegend();
         pangolin::FinishFrame();
 
         cv::Mat toShow;

@@ -46,7 +46,7 @@ void YoloDetect::LoadClassNames()
 		newObject.mapPoints = vector<MapPoint*>(1,static_cast<MapPoint*>(NULL));
 		newObject.objectMask = objectMask;
 		newObject.depthMinMax = depthMinMax;
-		mObjects.push_back(newObject);
+		mDynamicObjects.push_back(newObject);
 	}
 	//With the segmentation map 
 	void YoloDetect::AddNewObject(cv::Rect2i objectArea,std::string classID, cv::Mat objectSegMap, bool isDynamic)
@@ -59,13 +59,10 @@ void YoloDetect::LoadClassNames()
 		newObject.objectMask = objectSegMap;
 		if(isDynamic)
 			mDynamicObjects.push_back(newObject);
-		else
-			mObjects.push_back(newObject);
 	}
 
 	void YoloDetect::ClearObjects()
 	{
-		mObjects.clear();
 		mDynamicObjects.clear();
 	}
 	std::pair<float, float> YoloDetect::CalculateDepth(cv::Rect boudingboxLeft, cv::Rect boudingboxRight, float bf)
@@ -150,8 +147,6 @@ void YoloDetect::LoadClassNames()
 		        bottom, (float)(org_height -1));  // Ensure bottom does not exceed image height.
 		    float score =det[i][4].item().toFloat();  // Get the detection confidence score.
 		    int classID = det[i][37].item().toFloat(); // I'm saving the classID in the last element. 
-		    if (mClassnames[classID]=="person")
-		    	continue;
 		    // Assign detection properties to the objects array.
 		    cv::Rect2i objectArea(left, top, right - left, bottom - top);
 		  	//cout << "objectArea = " << objectArea<< endl;
@@ -170,12 +165,12 @@ void YoloDetect::LoadClassNames()
 		    cv::Mat object_seg_map;
 		    cv::resize(seg_map, object_seg_map, cv::Size(org_width, org_height),
 		               cv::INTER_LINEAR);  	
-		  	//if(mClassnames[classID]=="person"){
+		  	if(mClassnames[classID]=="person"){
 		  	 	//cv::namedWindow("Segmentation Mask", cv::WINDOW_NORMAL);
 		  	 	//cv::imshow("Segmentation Mask", object_seg_map);
 		  	 	//cv::waitKey(0); 
 		  		AddNewObject(objectArea, mClassnames[classID],object_seg_map, true);
-		  	//}
+		  	}
 		  	//else {
 		  		//AddNewObject(objectArea, mClassnames[classID],object_seg_map, false);
 		  	//}
@@ -186,7 +181,7 @@ void YoloDetect::LoadClassNames()
 	std::vector<YoloDetect::Object> YoloDetect::GetObjects()
     {
        	std::lock_guard<std::mutex> lock(mMutex); 
-        return mObjects;
+        return mDynamicObjects;
     }
 	std::vector<YoloDetect::Object> YoloDetect::GetDynamicObjects()
     {
@@ -197,17 +192,17 @@ void YoloDetect::LoadClassNames()
     void YoloDetect::SetMapPoints(int objectIndex, const std::vector<MapPoint*>& newMapPoints)
     {
     	std::lock_guard<std::mutex> lock(mMutex);
-    	if (objectIndex >= 0 && objectIndex < mObjects.size())
+    	if (objectIndex >= 0 && objectIndex < mDynamicObjects.size())
 	    {
-	        mObjects[objectIndex].mapPoints = newMapPoints; // Set new mapPoints for the specified object
+	        mDynamicObjects[objectIndex].mapPoints = newMapPoints; // Set new mapPoints for the specified object
 	    }
     }
     void YoloDetect::SetKeyPoints(int objectIndex, const std::vector<cv::KeyPoint>& newKeyPoints)
     {
         std::lock_guard<std::mutex> lock(mMutex);
-	    if (objectIndex >= 0 && objectIndex < mObjects.size())
+	    if (objectIndex >= 0 && objectIndex < mDynamicObjects.size())
 	    {
-	        mObjects[objectIndex].keyPoints = newKeyPoints; // Set new keyPoints for the specified object.
+	        mDynamicObjects[objectIndex].keyPoints = newKeyPoints; // Set new keyPoints for the specified object.
 	    }
     }
 

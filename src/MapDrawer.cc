@@ -330,7 +330,7 @@ void MapDrawer::DrawRectangleAroundPoints(const std::vector<Eigen::Vector3f>& po
     Eigen::Vector3f center = (vertices[0] + vertices[1] + vertices[2] + vertices[3]) / 4.0f;
     glPushMatrix();
     glBegin(GL_LINES);
-    glColor3f(0.0, 1.0, 0.0);
+    glColor3f(0.0, 0.0, 0.0);
     glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
     glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
 
@@ -360,7 +360,7 @@ void MapDrawer::DrawObject(const YoloDetect::Object& object) {
     // Vector to store valid points
     std::vector<Eigen::Vector3f> validPoints;
     glBegin(GL_POINTS);
-    glColor3f(1.0,0.0,0.0);
+    glColor3f(0.0,0.0,0.0);
     // Collect all valid points
     for (const auto& mp : object.mapPoints)
     {
@@ -453,7 +453,7 @@ void MapDrawer::DrawMapPoints()
     glEnd();
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
-    glColor3f(1.0,0.0,0.0);
+    glColor3f(0.0,0.0,0.0);
     for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
     {
         if((*sit)->isBad())
@@ -495,7 +495,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             if(!pKF->GetParent()) // It is the first KF in the map
             {
                 glLineWidth(mKeyFrameLineWidth*5);
-                glColor3f(1.0f,0.0f,0.0f);
+                glColor3f(0.0f,0.0f,0.0f);
                 glBegin(GL_LINES);
             }
             else
@@ -505,20 +505,20 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
                 if (bDrawOptLba) {
                     if(sOptKFs.find(pKF->mnId) != sOptKFs.end())
                     {
-                        glColor3f(0.0f,1.0f,0.0f); // Green -> Opt KFs
+                        glColor3f(0.0f,0.0f,0.0f); // Green -> Opt KFs
                     }
                     else if(sFixedKFs.find(pKF->mnId) != sFixedKFs.end())
                     {
-                        glColor3f(1.0f,0.0f,0.0f); // Red -> Fixed KFs
+                        glColor3f(0.0f,0.0f,0.0f); // Red -> Fixed KFs
                     }
                     else
                     {
-                        glColor3f(0.0f,0.0f,1.0f); // Basic color
+                        glColor3f(0.0f,0.0f,0.0f); // Basic color
                     }
                 }
                 else
                 {
-                    glColor3f(0.0f,0.0f,1.0f); // Basic color
+                    glColor3f(0.0f,0.0f,0.0f); // Basic color
                 }
                 glBegin(GL_LINES);
             }
@@ -554,7 +554,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     if(bDrawGraph)
     {
         glLineWidth(mGraphLineWidth);
-        glColor4f(0.0f,1.0f,0.0f,0.6f);
+        glColor4f(0.0f,0.0f,0.0f,0.6f);
         glBegin(GL_LINES);
 
         // cout << "-----------------Draw graph-----------------" << endl;
@@ -602,7 +602,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     if(bDrawInertialGraph && pActiveMap->isImuInitialized())
     {
         glLineWidth(mGraphLineWidth);
-        glColor4f(1.0f,0.0f,0.0f,0.6f);
+        glColor4f(0.0f,0.0f,0.0f,0.6f);
         glBegin(GL_LINES);
 
         //Draw inertial links
@@ -644,13 +644,13 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
                 if(!vpKFs[i]->GetParent()) // It is the first KF in the map
                 {
                     glLineWidth(mKeyFrameLineWidth*5);
-                    glColor3f(1.0f,0.0f,0.0f);
+                    glColor3f(0.0f,0.0f,0.0f);
                     glBegin(GL_LINES);
                 }
                 else
                 {
                     glLineWidth(mKeyFrameLineWidth);
-                    glColor3f(mfFrameColors[index_color][0],mfFrameColors[index_color][1],mfFrameColors[index_color][2]);
+                    glColor3f(0.0f,0.0f,0.0f);
                     glBegin(GL_LINES);
                 }
 
@@ -697,7 +697,7 @@ void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
 #endif
 
     glLineWidth(mCameraLineWidth);
-    glColor3f(0.0f,1.0f,0.0f);
+    glColor3f(0.0f,0.0f,0.0f);
     glBegin(GL_LINES);
     glVertex3f(0,0,0);
     glVertex3f(w,h,z);
@@ -762,7 +762,7 @@ void MapDrawer::DrawObjectMapPoints(const YoloDetect::Object& object)
     const vector<MapPoint*> &vpObjectMPs = pActiveMap->GetAllObjectMapPoints();
     glPointSize(5);
     glBegin(GL_POINTS);
-    glColor3f(0.0, 1.0, 0.0);
+    glColor3f(0.0, 0.0, 0.0);
    // All map points
     for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
     {
@@ -799,11 +799,11 @@ void MapDrawer::DrawObjectMapPoints(int index, std::string classID)
         {"sofa", Eigen::Vector3f(0.824, 0.412, 0.118)},
         {"cell phone", Eigen::Vector3f(1.000, 0.843, 0.000)}
     };
-    Eigen::Vector3f color = Eigen::Vector3f(0.0, 1.0, 0.0); // Default Green
+    Eigen::Vector3f color = Eigen::Vector3f(0.0, 0.0, 0.0); // Default Black
     if (classColors.find(classID) != classColors.end()) {
         color = classColors[classID];
     }
-    glColor3f(color.x(), color.y(), color.z());
+    glColor3f(0.0, 0.0, 0.0);
     // All map points
     for (std::vector<MapPoint *>::const_iterator i = vpObjectMPs.begin(); i != vpObjectMPs.end(); i++)
     {

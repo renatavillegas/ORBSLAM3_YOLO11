@@ -50,7 +50,6 @@ public:
 	bool newObjct;
 private:
 	std::mutex mMutex;
-	std::vector<Object> mObjects;
 	std::vector<Object> mDynamicObjects;
 	std::string mModelPath;
 	std::string mClassesPath;
