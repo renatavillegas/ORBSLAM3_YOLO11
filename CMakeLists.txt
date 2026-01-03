@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM3_2)
 
+option(CUDA_SUPPORTED "Enable CUDA support" OFF)
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
@@ -59,9 +61,11 @@ find_package(Pangolin REQUIRED)
 find_package(realsense2)
 find_package(GLUT REQUIRED)
 find_package(Torch REQUIRED)
-#import cuda
-find_package(CUDA REQUIRED)
-set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.8)
+if(CUDA_SUPPORTED)
+    find_package(CUDA REQUIRED)
+    set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.8)
+    add_definitions(-DCUDA_SUPPORTED)
+endif()
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -72,10 +76,14 @@ ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${GLUT_INCLUDE_DIRS}
 ${TORCH_INCLUDE_DIRS}
-${CUDA_INCLUDE_DIRS}
+if(CUDA_SUPPORTED)
+    ${CUDA_INCLUDE_DIRS}
+endif()
 )
 
-link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+if(CUDA_SUPPORTED)
+    link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64)
+endif()
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 

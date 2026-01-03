@@ -117,6 +117,9 @@ namespace ORB_SLAM3 {
 
         float thFarPoints() {return thFarPoints_;}
 
+        std::string yoloModelPath() {return yoloModelPath_;}
+        std::string yoloClassesPath() {return yoloClassesPath_;}
+
         cv::Mat M1l() {return M1l_;}
         cv::Mat M2l() {return M2l_;}
         cv::Mat M1r() {return M1r_;}
@@ -227,6 +230,11 @@ namespace ORB_SLAM3 {
          * Other stuff
          */
         float thFarPoints_;
+
+        /*
+         * YOLO stuff
+         */
+        std::string yoloModelPath_, yoloClassesPath_;
 
     };
 };

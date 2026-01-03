@@ -480,6 +480,12 @@ namespace ORB_SLAM3 {
         bool found;
 
         thFarPoints_ = readParameter<float>(fSettings,"System.thFarPoints",found,false);
+
+        yoloModelPath_ = readParameter<std::string>(fSettings,"YOLO.ModelPath",found,false);
+        if(!found) yoloModelPath_ = "yolo11n-seg.torchscript";
+
+        yoloClassesPath_ = readParameter<std::string>(fSettings,"YOLO.ClassesPath",found,false);
+        if(!found) yoloClassesPath_ = "coco.names";
     }
 
     void Settings::precomputeRectificationMaps() {

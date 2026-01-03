@@ -7,19 +7,25 @@ namespace ORB_SLAM3
 {
 	static const int INPUT_W = 640;
 	static const int INPUT_H = 640;
-	YoloDetect::YoloDetect()
+	YoloDetect::YoloDetect(std::string modelPath, std::string classesPath)
+		: mDevice(torch::Device("cpu"))
 	{
+		mModelPath = modelPath;
+		mClassesPath = classesPath;
+#ifdef CUDA_SUPPORTED
+		mDevice = torch::Device("cuda");
+#endif
 		LoadClassNames();
 	}
 void YoloDetect::LoadClassNames()
 	{
 		//load model 
-		mModule = torch::jit::load("yolo11n-seg.torchscript", torch::kCUDA);
+		mModule = torch::jit::load(mModelPath);
 		//load classes
-		std::ifstream f("/home/oficina-robotica/ORB_SLAM3_2/coco.names");
+		std::ifstream f(mClassesPath);
 	    if (!f.is_open())
 	    {
-	        std::cerr << "Error: Could not open file coco.names" << std::endl;
+	        std::cerr << "Error: Could not open file " << mClassesPath << std::endl;
 	        return; // return early if file cannot be opened
 	    }
     	std::string name = "";
@@ -90,14 +96,14 @@ void YoloDetect::LoadClassNames()
 	    // Preparing input tensor left
 	    cv::resize(mImageLeft, imgLeft, cv::Size(640, 640));
 	    cv::cvtColor(imgLeft, imgLeft, cv::COLOR_BGR2RGB);
-	    torch::Tensor imgTensorLeft = torch::from_blob(imgLeft.data, {imgLeft.rows, imgLeft.cols,3},torch::kByte).to(torch::kCUDA);
+	    torch::Tensor imgTensorLeft = torch::from_blob(imgLeft.data, {imgLeft.rows, imgLeft.cols,3},torch::kByte).to(mDevice);
 	    imgTensorLeft = imgTensorLeft.permute({2, 0, 1}); //channels, height, width
 	    imgTensorLeft = imgTensorLeft.unsqueeze(0);
 	    imgTensorLeft = imgTensorLeft.toType(torch::kFloat);
 	    imgTensorLeft = imgTensorLeft.div(255.0);
 	    //execute inference
 	    std::vector<torch::jit::IValue> inputs;
-	    imgTensorLeft.to(torch::kCUDA);
+	    imgTensorLeft.to(mDevice);
 	    inputs.push_back(std::move(imgTensorLeft));
 	    torch::jit::IValue output = mModule.forward(inputs);
 	    //extract predictions
@@ -151,8 +157,8 @@ void YoloDetect::LoadClassNames()
 		  	//cout << "objectArea = " << objectArea<< endl;
 		  	//cout << "classID=" << mClassnames[classID]<< endl;
 		  	seg_rois = det[i].slice(0, 5, det[i].sizes()[0]-1);  // Extract segmentation ROI.(the latest element is the classID)
-		  	seg_rois = seg_rois.view({1, 32}).to(torch::kCUDA);
-		  	seg_pred = seg_pred.to(torch::kCUDA);
+		  	seg_rois = seg_rois.view({1, 32}).to(mDevice);
+		  	seg_pred = seg_pred.to(mDevice);
 		  	seg_pred = seg_pred.view({1, 32, -1});
 		  	auto final_seg = torch::matmul(seg_rois, seg_pred).view({1, 160, 160});
 		  	final_seg = final_seg.sigmoid();  // Apply sigmoid to get mask probabilities.
@@ -289,11 +295,11 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 {
 	std::vector<torch::Tensor> output;
 	for (size_t i = 0; i < preds.sizes()[0]; ++i) {
-		 torch::Tensor pred = preds.select(0, i).to(torch::kCUDA);
+		 torch::Tensor pred = preds.select(0, i).to(mDevice);
 		 torch::Tensor scores = std::get<0>(torch::max(pred.slice(1, 4, 84), 1));
 		 auto mask = scores > score_thresh;
 		 if (mask.sum().item<int>() > 0) {
-		 	torch::Tensor indices = torch::nonzero(mask).select(1, 0).to(torch::kCUDA);
+		 	torch::Tensor indices = torch::nonzero(mask).select(1, 0).to(mDevice);
 		 	pred = torch::index_select(pred, 0, indices);
 		    // Convert bounding box format from center x, center y, width, height (cx,
 		    // cy, w, h) to top-left and bottom-right corners (x1, y1, x2, y2).
@@ -314,9 +320,9 @@ vector<torch::Tensor> YoloDetect::non_max_suppression_seg(torch::Tensor preds, f
 		    // into a single tensor.
 		    dets = torch::cat({pred.slice(1, 0, 5), pred.slice(1, 84, 116), predLoc.unsqueeze(1)}, 1);
 		    // Prepare tensors to keep track of indices of detections to retain.
-			torch::Tensor keep = torch::empty({dets.sizes()[0]}, torch::kInt64).to(torch::kCUDA);
+			torch::Tensor keep = torch::empty({dets.sizes()[0]}, torch::kInt64).to(mDevice);
 		    torch::Tensor areas = (dets.select(1, 3) - dets.select(1, 1)) *
-                          		  (dets.select(1, 2) - dets.select(1, 0)).to(torch::kCUDA);
+                          		  (dets.select(1, 2) - dets.select(1, 0)).to(mDevice);
 		    // Sort detections by confidence score in descending order.
 		    auto indexes_tuple = torch::sort(dets.select(1, 4), 0,
 		                                     1);  // 0: first order, 1: decending order

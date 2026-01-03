@@ -68,3 +68,8 @@ Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -1.8
 Viewer.ViewpointF: 500.0
 
+#--------------------------------------------------------------------------------------------
+# YOLO Parameters
+#--------------------------------------------------------------------------------------------
+YOLO.ModelPath: "yolo11n-seg.torchscript"
+YOLO.ClassesPath: "coco.names"

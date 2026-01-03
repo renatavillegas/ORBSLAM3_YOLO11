@@ -48,12 +48,10 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
-    mpYoloDetect = new YoloDetect();
-    mDetectedObjectSize =0;
-
     // Load camera parameters from settings file
     if(settings){
         newParameterLoader(settings);
+        mpYoloDetect = new YoloDetect(settings->yoloModelPath(), settings->yoloClassesPath());
     }
     else{
         cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -96,6 +94,9 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             }
         }
     }
+
+    mpYoloDetect = new YoloDetect();
+    mDetectedObjectSize =0;
 
     initID = 0; lastID = 0;
     mbInitWith3KFs = false;

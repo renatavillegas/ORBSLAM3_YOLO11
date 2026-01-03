@@ -22,7 +22,7 @@ public:
 		std::pair<float, float> depthMinMax;
 	} Object;	
 	//Constructor 
-	YoloDetect();
+	YoloDetect(std::string modelPath = "yolo11n-seg.torchscript", std::string classesPath = "coco.names");
 	//yolo detection function
 	void Detect();
 	// yolo detection variables
@@ -52,6 +52,9 @@ private:
 	std::mutex mMutex;
 	std::vector<Object> mObjects;
 	std::vector<Object> mDynamicObjects;
+	std::string mModelPath;
+	std::string mClassesPath;
+	torch::Device mDevice; 
 };
 }// namespace ORB_SLAM3
 #endif // DETECTOR_H
